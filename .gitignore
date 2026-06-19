@@ -1,0 +1,17 @@
+# Google OAuth credentials and tokens
+credentials.json
+token.json
+
+# Output data
+unsubscribe_links.json
+unsubscribe_results.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Environment variables / API keys
+.env
