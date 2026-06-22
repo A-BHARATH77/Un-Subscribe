@@ -2,9 +2,10 @@
 credentials.json
 token.json
 
-# Output data
-unsubscribe_links.json
-unsubscribe_results.json
+# Browser automation profile folders (contain real Gmail login session data)
+chrome_manual_profile/
+gmail_browser_profile/
+
 
 # Python
 __pycache__/

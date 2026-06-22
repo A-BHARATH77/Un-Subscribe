@@ -9,6 +9,9 @@ Setup:
    A `token.json` is saved so you won't need to re-auth every time.
 
 Output: `unsubscribe_links.json` — a list of {sender, subject, link_type, link}
+
+Note: requires `pip install requests` in addition to earlier dependencies,
+used for the blank-page/tracking-token validation step.
 """
 
 import base64
@@ -18,8 +21,9 @@ import os
 import re
 from email import message_from_bytes
 from email.utils import parseaddr
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
+import requests
 from bs4 import BeautifulSoup
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -150,6 +154,64 @@ def extract_footer_unsubscribe_link(html, base_url=None):
     return {"link": best["href"], "link_text": best["text"], "confidence": best["score"]}
 
 
+def _page_has_content(url, timeout=8):
+    """Lightweight check: does this URL actually render something meaningful,
+    or is it a blank/empty shell? Some marketing platforms (Marketo, etc.)
+    serve an empty page at the tracked URL (with a tracking token like
+    mkt_tok in the query string) and only show the real unsubscribe form
+    once you land on the bare URL without that token. We can't run a full
+    JS-rendering browser in Stage 1 (that's Stage 2's job), so this does a
+    plain HTTP GET and checks if the body has substantive content."""
+    try:
+        resp = requests.get(
+            url, timeout=timeout,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; UnsubBot/1.0)"},
+            allow_redirects=True,
+        )
+    except requests.RequestException:
+        return False, None
+
+    if resp.status_code >= 400:
+        return False, resp.url
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    visible_text = soup.get_text(strip=True)
+    has_form_elements = bool(soup.find_all(["form", "input", "button", "select"]))
+    has_meaningful_text = len(visible_text) > 40  # arbitrary floor to filter out blank shells
+
+    return (has_form_elements or has_meaningful_text), resp.url
+
+
+def _stripped_url(url):
+    """Returns the same URL with the query string removed, e.g. strips off
+    ?mkt_tok=... style tracking tokens to try the 'bare' page underneath."""
+    parsed = urlparse(url)
+    return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+
+
+def validate_and_resolve_link(url):
+    """General fix for the 'tracked link renders blank, bare link has the
+    real form' pattern. Tries the link as-is first; if it looks empty,
+    falls back to the same URL with query params stripped. Returns the URL
+    that should actually be used, plus a note on what happened."""
+    if not url or url.startswith("mailto:"):
+        return url, "not_checked (mailto)"
+
+    ok, final_url = _page_has_content(url)
+    if ok:
+        return final_url or url, "ok_as_is"
+
+    stripped = _stripped_url(url)
+    if stripped != url:
+        ok_stripped, final_stripped = _page_has_content(stripped)
+        if ok_stripped:
+            return final_stripped or stripped, "fell_back_to_stripped_url"
+
+    # Neither version clearly worked — hand back the original link anyway,
+    # but flag it so Stage 2 / a human knows to double check it.
+    return url, "unverified_possibly_blank"
+
+
 def main():
     service = get_gmail_service()
     results = []
@@ -177,6 +239,7 @@ def main():
             "footer_link": None,
             "best_link": None,        # the single link Stage 2 should actually visit
             "best_link_source": None, # "header" or "footer", for debugging
+            "link_validation": None,
         }
 
         header_data = extract_list_unsubscribe(headers)
@@ -185,29 +248,67 @@ def main():
 
         header_has_strong_link = bool(header_data and header_data.get("https_links"))
 
-        # Only bother scanning the HTML body if the header didn't already
-        # give us a clean https link — saves time and avoids noisy duplicates.
-        if not header_has_strong_link:
-            html_body = get_email_html_body(msg["payload"])
-            base_url = f"https://{entry['sender_domain']}" if entry["sender_domain"] else None
-            footer_result = extract_footer_unsubscribe_link(html_body, base_url=base_url)
-            if footer_result:
-                entry["footer_link"] = footer_result
+        # Always extract the footer link too now (not just as a fallback),
+        # because the header link isn't always more trustworthy — some ESPs
+        # route List-Unsubscribe through a third-party redirect gateway that
+        # never actually lands on the sender's real opt-out page, while the
+        # footer link in the body goes there directly. We need both
+        # candidates to compare, not just whichever we find first.
+        html_body = get_email_html_body(msg["payload"])
+        base_url = f"https://{entry['sender_domain']}" if entry["sender_domain"] else None
+        footer_result = extract_footer_unsubscribe_link(html_body, base_url=base_url)
+        if footer_result:
+            entry["footer_link"] = footer_result
 
-        # Decide the single best link to hand to Stage 2.
+        # Build the list of real candidates (header https link, footer link),
+        # validate each one (follows redirects, checks for blank pages), then
+        # pick the winner based on which actually resolves to the sender's
+        # own domain — that's a stronger trust signal than "header beats
+        # footer by default", since third-party ESP redirect gateways in the
+        # header sometimes never reach the real opt-out page.
+        candidates = []
         if header_has_strong_link:
-            entry["best_link"] = header_data["https_links"][0]
-            entry["best_link_source"] = "header"
-        elif entry["footer_link"] and entry["footer_link"]["confidence"] >= 4:
-            entry["best_link"] = entry["footer_link"]["link"]
-            entry["best_link_source"] = "footer"
+            header_url = header_data["https_links"][0]
+            resolved, note = validate_and_resolve_link(header_url)
+            candidates.append({
+                "source": "header", "original": header_url,
+                "resolved": resolved, "note": note,
+            })
+
+        if entry["footer_link"] and entry["footer_link"]["confidence"] >= 4:
+            footer_url = entry["footer_link"]["link"]
+            resolved, note = validate_and_resolve_link(footer_url)
+            candidates.append({
+                "source": "footer", "original": footer_url,
+                "resolved": resolved, "note": note,
+            })
+
+        def _domain_matches_sender(resolved_url):  # kept for reference/debugging, not used in ranking now
+            if not resolved_url or not entry["sender_domain"]:
+                return False
+            resolved_host = urlparse(resolved_url).netloc.lower()
+            sender_root = ".".join(entry["sender_domain"].lower().split(".")[-2:])
+            return sender_root in resolved_host
+
+        chosen = None
+        if entry["footer_link"] and entry["footer_link"]["confidence"] >= 4:
+            footer_candidates = [c for c in candidates if c["source"] == "footer"]
+            chosen = footer_candidates[0] if footer_candidates else None
+        if not chosen and candidates:
+            chosen = candidates[0]
+
+        if chosen:
+            entry["best_link"] = chosen["resolved"]
+            entry["best_link_source"] = chosen["source"]
+            entry["link_validation"] = chosen["note"]
         elif header_data and header_data.get("mailto"):
             entry["best_link"] = f"mailto:{header_data['mailto'][0]}"
             entry["best_link_source"] = "header_mailto"
+            entry["link_validation"] = "not_checked (mailto)"
 
         if entry["best_link"]:
             results.append(entry)
-            print(f"[{entry['best_link_source']}] {sender} -> {subject}")
+            print(f"[{entry['best_link_source']}] ({entry['link_validation']}) {sender} -> {subject}")
 
     # Dedupe: many emails from the same sender share the exact same
     # unsubscribe link — no need to visit it more than once in Stage 2.
