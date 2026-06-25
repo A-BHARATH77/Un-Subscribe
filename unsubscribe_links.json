@@ -1,5 +1,259 @@
 [
   {
+    "sender": "Zara <zara@news.zara.com>",
+    "sender_domain": "news.zara.com",
+    "subject": "SALE | Tonight at 21:00 online",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://news.zara.com/pub/optout/UnsubscribeOneStepConfirmAction?YES=true&_ri_=X0Gzc2X%3DBQjkPkSTRQGzar8PK4m4jEbdDuSv4RKzffres1zahcE3YSza9kLzgf6YFhYBIwa6XlzcwwhXvzb0C63vzbp8R&_ei_=ESqPUnNoRBnVvdcjLQXt8qgyfQJqYwVcQywqDOf7H1mA5A64xRAXjpfbkttWJLvmdAFlIQ5NLV_yDT0_uFWKtsvFHyAXVNNZZkccyka2tIWTha7c2S35dxbYXBw88mjbOPuF6M."
+      ],
+      "mailto": [
+        "unsubscribe-BQjkPkSTRQGzar8PK4m4jEbdDuSv4RKzffres1zahcE3YSza9kLzgf6YFhYBIwa6XlzcwwhXvzb0C63vzbp8R@imh.rsys120.origin.responsys.ocs.oraclecloud.com?subject=List-Unsubscribe"
+      ],
+      "one_click_supported": true
+    },
+    "footer_link": null,
+    "best_link": "https://news.zara.com/pub/optout/UnsubscribeOneStepConfirmAction?YES=true&_ri_=X0Gzc2X%3DBQjkPkSTRQGzar8PK4m4jEbdDuSv4RKzffres1zahcE3YSza9kLzgf6YFhYBIwa6XlzcwwhXvzb0C63vzbp8R&_ei_=ESqPUnNoRBnVvdcjLQXt8qgyfQJqYwVcQywqDOf7H1mA5A64xRAXjpfbkttWJLvmdAFlIQ5NLV_yDT0_uFWKtsvFHyAXVNNZZkccyka2tIWTha7c2S35dxbYXBw88mjbOPuF6M.",
+    "best_link_source": "header",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "Airbnb <discover@airbnb.com>",
+    "sender_domain": "airbnb.com",
+    "subject": "A great getaway isn\u2019t far away",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://callbacks.airbnb.com/v1/external/callback/postoffice/email_unsubscribe?token=eyJ1dWlkIjoiMDZiYTJlMzMtOTljMC03NjVjLWFhMDUtYWY2YTVjYzYxY2IwIiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==&mac=78R8CY9lpobMVXQLZ9Io2QEu8eU="
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://www.airbnb.co.in/account-settings/email-unsubscribe?mac=78R8CY9lpobMVXQLZ9Io2QEu8eU=&token=eyJ1dWlkIjoiMDZiYTJlMzMtOTljMC03NjVjLWFhMDUtYWY2YTVjYzYxY2IwIiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==",
+      "link_text": "unsubscribe",
+      "confidence": 9
+    },
+    "best_link": "https://www.airbnb.co.in/account-settings/email-unsubscribe?mac=78R8CY9lpobMVXQLZ9Io2QEu8eU=&token=eyJ1dWlkIjoiMDZiYTJlMzMtOTljMC03NjVjLWFhMDUtYWY2YTVjYzYxY2IwIiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "Wayfair <editor@members.wayfair.com>",
+    "sender_domain": "members.wayfair.com",
+    "subject": "LARGE AREA RUGS are heeere! under $99",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&unsub_src=em_header&_emr=568ec292-b796-46c0-a5cc-5cb0ecdf8ce5&channel=1&wfcs=cs9&topic=1&refid=MKTEML_121686"
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?_emr=568ec292-b796-46c0-a5cc-5cb0ecdf8ce5&channel=1&wfcs=cs9&_eml=f2267b39-200b-4a25-a4cb-da4ae23ec7a4&source=graymatter_batch&batchid=6&varid=5&csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&sltid=11&brcid=1&topic=1&sm=1&refid=MKTEML_121686&emlid=101&maiid=15601&mdlid=b0a8235f-086b-4535-90cb-82052ba5532f",
+      "link_text": "click here",
+      "confidence": 8
+    },
+    "best_link": "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?_emr=568ec292-b796-46c0-a5cc-5cb0ecdf8ce5&channel=1&wfcs=cs9&_eml=f2267b39-200b-4a25-a4cb-da4ae23ec7a4&source=graymatter_batch&batchid=6&varid=5&csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&sltid=11&brcid=1&topic=1&sm=1&refid=MKTEML_121686&emlid=101&maiid=15601&mdlid=b0a8235f-086b-4535-90cb-82052ba5532f",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "Wayfair <editor@members.wayfair.com>",
+    "sender_domain": "members.wayfair.com",
+    "subject": "REFRIGERATORS \u231b UP TO 60% OFF \u231b ENDS TONIGHT \u231b  ",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&unsub_src=em_header&_emr=4617d459-2764-47db-a8b2-ca478d097aec&channel=1&wfcs=cs9&topic=1&refid=MKTEML_136248"
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?_emr=4617d459-2764-47db-a8b2-ca478d097aec&channel=1&wfcs=cs9&_eml=2bc785c0-ed47-408a-acf1-fdda9188c6ac&source=batch&batchid=2&varid=8&csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&brcid=1&topic=1&skurectxid=af996041-7ca1-4c6d-b10a-47f44b604108&event_rec_txid=9885f2a6-65ae-4afa-b536-4af608489432&sm=1&refid=MKTEML_136248&emlid=101&maiid=15597",
+      "link_text": "click here",
+      "confidence": 8
+    },
+    "best_link": "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?_emr=4617d459-2764-47db-a8b2-ca478d097aec&channel=1&wfcs=cs9&_eml=2bc785c0-ed47-408a-acf1-fdda9188c6ac&source=batch&batchid=2&varid=8&csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&brcid=1&topic=1&skurectxid=af996041-7ca1-4c6d-b10a-47f44b604108&event_rec_txid=9885f2a6-65ae-4afa-b536-4af608489432&sm=1&refid=MKTEML_136248&emlid=101&maiid=15597",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "Tyler Denk <beehiivblog@mail.beehiiv.com>",
+    "sender_domain": "mail.beehiiv.com",
+    "subject": "Inside $35M of Paid Newsletter Revenue",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://beehiivblog.beehiiv.com/unsubscribe/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWJzY3JpYmVyX2lkIjoiOTI0ZTUwOTctZGVhYy00OTE0LTg4NGQtYTc1MmEyOTk2NmQ0IiwicG9zdF9pZCI6IjNhMzQwYzdkLWYwNGEtNDJhZi04ZmRhLWFjMTJmMWNiZDliZCIsImxhc3RfcmVzb3VyY2VfZ3VpZCI6IlBvc3Q6M2EzNDBjN2QtZjA0YS00MmFmLThmZGEtYWMxMmYxY2JkOWJkIn0.Hfb0TPWFQTYHCrcx6XwbatlcrXaUiQ2fgwvekWJob_E"
+      ],
+      "mailto": [
+        "eb1d935c-a75e-444a-abcc-d8f5652dce1a+924e5097-deac-4914-884d-a752a29966d4+3a340c7d-f04a-42af-8fda-ac12f1cbd9bd@unsub.beehiiv.com"
+      ],
+      "one_click_supported": true
+    },
+    "footer_link": null,
+    "best_link": "https://beehiivblog.beehiiv.com/unsubscribe/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWJzY3JpYmVyX2lkIjoiOTI0ZTUwOTctZGVhYy00OTE0LTg4NGQtYTc1MmEyOTk2NmQ0IiwicG9zdF9pZCI6IjNhMzQwYzdkLWYwNGEtNDJhZi04ZmRhLWFjMTJmMWNiZDliZCIsImxhc3RfcmVzb3VyY2VfZ3VpZCI6IlBvc3Q6M2EzNDBjN2QtZjA0YS00MmFmLThmZGEtYWMxMmYxY2JkOWJkIn0.Hfb0TPWFQTYHCrcx6XwbatlcrXaUiQ2fgwvekWJob_E",
+    "best_link_source": "header",
+    "link_validation": "unverified_possibly_blank"
+  },
+  {
+    "sender": "Best Buy <BestBuy@email.bestbuy.com>",
+    "sender_domain": "email.bestbuy.com",
+    "subject": "Thanks for joining My Best Buy!",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://trk.email.bestbuy.com/list-unsub/uc/3/eyJhaSI6OTQwMTc0ODEsImUiOiJtZy1lbmM6MVFubE8vNjVNbVA1czI5dENkMzlxOE81emhDdVpRYVRVaVpqeUxibzM4az0iLCJyaSI6IjQyMDQ1NzEzOCIsInJxIjoiMDItYjI2MTczLTg2OTllYjMzZTVmZjQ2ZDRiMTdiYTYwNDQ5YTMwZjNlIiwibSI6ZmFsc2V9/bMu8j9kFkZP6sh7BU3Sd7Q"
+      ],
+      "mailto": [
+        "unsub-3940174810001a25f0e02-b26173-8699eb33e5ff46d4b17ba60449a30f3e@email.bestbuy.com"
+      ],
+      "one_click_supported": true
+    },
+    "footer_link": null,
+    "best_link": "https://trk.email.bestbuy.com/list-unsub/uc/3/eyJhaSI6OTQwMTc0ODEsImUiOiJtZy1lbmM6MVFubE8vNjVNbVA1czI5dENkMzlxOE81emhDdVpRYVRVaVpqeUxibzM4az0iLCJyaSI6IjQyMDQ1NzEzOCIsInJxIjoiMDItYjI2MTczLTg2OTllYjMzZTVmZjQ2ZDRiMTdiYTYwNDQ5YTMwZjNlIiwibSI6ZmFsc2V9/bMu8j9kFkZP6sh7BU3Sd7Q",
+    "best_link_source": "header",
+    "link_validation": "unverified_possibly_blank"
+  },
+  {
+    "sender": "\"Expedia.com\" <mail@eg.expedia.com>",
+    "sender_domain": "eg.expedia.com",
+    "subject": "Bharath, here\u2019s an $15 gift of OneKeyCash: Welcome to One Key",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://click.eg.expedia.com/subscription_center.aspx?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiI1MjYwMDE3MzUiLCJzIjoiOTQ3NDgxNzU5IiwibGlkIjoiOCIsImoiOiIxNzkxNzE4IiwiamIiOiI3NDMzIiwiZCI6IjEyMDA1MiJ9.XJYseqt2gVkwDQy0RfjOS3Sk9S1bRxDCpN_fgLwnFnk"
+      ],
+      "mailto": [
+        "leave-YDI2M5HFHQUEPJ4FMBF3PPFMAM.120052@leave.eg.expedia.com"
+      ],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://click.eg.expedia.com/u/?qs=ABB7InYiOjEsImQiOjQ5MTR9AAwAAAAAAU4QvnEEG6SZIHNo1nxuwpiSwAwlpmBlQRAIwTjN8czNqSKg8I9KTPj9dRDwr3gBu1v77EFFevzpGEbxQzK76D4SeIzeckRXSfeDej0dTKol",
+      "link_text": "Unsubscribe from Offers & recommendations",
+      "confidence": 4
+    },
+    "best_link": "https://click.eg.expedia.com/u/?qs=ABB7InYiOjEsImQiOjQ5MTR9AAwAAAAAAU4QvnEEG6SZIHNo1nxuwpiSwAwlpmBlQRAIwTjN8czNqSKg8I9KTPj9dRDwr3gBu1v77EFFevzpGEbxQzK76D4SeIzeckRXSfeDej0dTKol",
+    "best_link_source": "footer",
+    "link_validation": "unverified_possibly_blank"
+  },
+  {
+    "sender": "Airbnb <discover@airbnb.com>",
+    "sender_domain": "airbnb.com",
+    "subject": "Welcome to Airbnb!",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://callbacks.airbnb.com/v1/external/callback/postoffice/email_unsubscribe?token=eyJ1dWlkIjoiOTAwMzE2YWUtMGNlNy1iYTdlLWI3MmItNjIwZTBiNTcwMDk0IiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==&mac=KfiK6uDCiLMQxE-s1a388Q7e6ig="
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://www.airbnb.co.in/account-settings/email-unsubscribe?mac=KfiK6uDCiLMQxE-s1a388Q7e6ig=&token=eyJ1dWlkIjoiOTAwMzE2YWUtMGNlNy1iYTdlLWI3MmItNjIwZTBiNTcwMDk0IiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==",
+      "link_text": "unsubscribe",
+      "confidence": 9
+    },
+    "best_link": "https://www.airbnb.co.in/account-settings/email-unsubscribe?mac=KfiK6uDCiLMQxE-s1a388Q7e6ig=&token=eyJ1dWlkIjoiOTAwMzE2YWUtMGNlNy1iYTdlLWI3MmItNjIwZTBiNTcwMDk0IiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "Product Hunt Weekly <hello@digest.producthunt.com>",
+    "sender_domain": "digest.producthunt.com",
+    "subject": "\ud83d\ude38 Make your check out to: Elon",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://s-links.producthunt.com/unsub2?m=CAAACNcTJjAAAc3D8OAAAdMJFPgAAAAIijYAAAAAAAYklQBqOAQQz9GgR4gJSJicvgXQreukWQAF1QU&b=a9c01304&e=efe12e1b&x=Eqf9_-tcBnC-q2qxbwsBlWlEdQQ_eRNodJGB1aBBrXo"
+      ],
+      "mailto": [
+        "unsub-a9c01304.z83o.x0v22p0m3trrm@bnc3.mailjet.com"
+      ],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://s-links.producthunt.com/lnk/CAAACNcTJjAAAc3D8OAAAdMJFPgAAAAIijYAAAAAAAYklQBqOAQQz9GgR4gJSJicvgXQreukWQAF1QU/44/K1LO493gG-qKjRJf-C9ajw/aHR0cHM6Ly93d3cucHJvZHVjdGh1bnQuY29tL215L3Vuc3Vic2NyaWJlP2tpbmQ9bmV3c2xldHRlcl93ZWVrbHkmcGhfbm90aWZpY2F0aW9uX2lkPTE2Njg0MzQwMzYmdG9rZW49ZjU2Zjk4N2JjZjcyYmNjNGNjNTFkZDgxNzdkNjE5MTkwZmNhZDI1YiZ1c2VyX2lkPTk5Mzg4NTkmdmFsaWRfdW50aWw9MTc4NDY0Nzk0OA",
+      "link_text": "unsubscribe",
+      "confidence": 4
+    },
+    "best_link": "https://www.producthunt.com/my/unsubscribe?kind=newsletter_weekly&ph_notification_id=1668434036&token=f56f987bcf72bcc4cc51dd8177d619190fcad25b&user_id=9938859&valid_until=1784647948",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "MailerLite <info@mailerlite.com>",
+    "sender_domain": "mailerlite.com",
+    "subject": "Welcome to MailerLite!",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://anlzn.clicks.mlsend.com/tf/cl/eyJ2Ijoie1wiYVwiOjIsXCJsXCI6MTkwNDIzMDkyNzgyMTcxNDMyLFwiclwiOjE5MDg5OTE2NzgwNTA0ODcwOH0iLCJzIjoiNzkxOTFlN2ZiMGUyYzMyOCJ9"
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://anlzn.clicks.mlsend.com/tf/cl/eyJ2Ijoie1wiYVwiOjIsXCJsXCI6MTkwNDIzMDkyNzgyMTcxNDMyLFwiclwiOjE5MDg5OTE2NzgwNTA0ODcwOH0iLCJzIjoiNzkxOTFlN2ZiMGUyYzMyOCJ9",
+      "link_text": "You can click to unsubscribe here",
+      "confidence": 4
+    },
+    "best_link": "https://unsubscribe.mailerlite.io/unsubscribe/2/190899167805048708/confirm?signature=1a0fdb210a9e41dfeea5aa34ccec3b0f56c715d6671fce21555544ed2163a689",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "MailerLite <info@mailerlite.com>",
+    "sender_domain": "mailerlite.com",
+    "subject": "Welcome to MailerLite!",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://anlzn.clicks.mlsend.com/tb/cl/eyJ2Ijoie1wiYVwiOjIsXCJsXCI6MTkwNDI0Nzg2NTQ4MDMyNjU2LFwiclwiOjE5MDg5OTE2NzgwMDg1NDQwMn0iLCJzIjoiOTI0ZTJlYzg3M2Y3NzRiMCJ9"
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://anlzn.clicks.mlsend.com/tb/cl/eyJ2Ijoie1wiYVwiOjIsXCJsXCI6MTkwNDI0Nzg2NTQ4MDMyNjU2LFwiclwiOjE5MDg5OTE2NzgwMDg1NDQwMn0iLCJzIjoiOTI0ZTJlYzg3M2Y3NzRiMCJ9",
+      "link_text": "You can click to unsubscribe here",
+      "confidence": 4
+    },
+    "best_link": "https://unsubscribe.mailerlite.io/unsubscribe/2/190899167800854402/confirm?signature=a667a6b892d94729871a3078ebf2a60b25ed75447778c5c0054b0f7634fe8e79",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "\"Chewy.com\" <chewy@paws.chewy.com>",
+    "sender_domain": "paws.chewy.com",
+    "subject": "Welcome to Chewy, Bharath. We're glad you're here.",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://03.emailinboundprocessing.com/enc_user/list_unsubscribe?d=%241%24zTTDXJzjRCyAy9vmoIQZ2w%3D%3D%24uklkk4PxnEVA9a65Jlyl2LZU2ZsT4TJnKqJUiQabnw52vqGLRMs2Jtvm0JJT%0Aq7Si0GLqWoOw0%2F2cPzzrbexDq%2F%2FkYnxc5MJggi377NOpcKut3kBjStExxLv1%0ANc2%2BheWuOexf%2Bvd5%2FTjiuhuGwvxIzrlqO6py2241bXuxJcNHEIzgdII%2BPSmT%0AmssVMxDhQVnFdbPxpRZzuXqsegyCId%2BIFAtpaoj5yHfrROi8CJI%2Bw6005%2FHx%0AiK4x5mQos2EjwmbpdwLmz5a2Q7eP4NCXGKvQ6qiliWWCPHO9MvD7Qmr%2BkgDz%0AGk33yTocnGkbKmTzigcu6uNFKuUs9laZKQO4gJjatnEpbvYWEQFDTTTqQPgk%0AB5shHBHfVOofI9r1HX9E6v%2B0MId7h5jY7OC1t8ZiXHJIMw%3D%3D&1=1"
+      ],
+      "mailto": [
+        "4_miaddx4cfkq5rq9f7ielpqwgg060m3iffwxyqohtgmwiv4bznhrfe4@unsubscribe-03.emailinboundprocessing.com?subject=Unsubscribe%20pnrcgsq6ajvo4hpoh7rqszrac8yed3b6z9q8b1byn99haagdpnwovcfd&body=DO_NOT_DELETE-65mvqlc575079cm0knoo7lguto98ix4r1v5662cefuc7wczo4wdbbl64coctr7jvyppja8aiihj2qcr89uaju74lfj7l85m5-DO_NOT_DELETE"
+      ],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://clicks-paws.chewy.com/f/a/2qT-SE35YHoAM5-3oVXCuQ~~/AAQRxRA~/C40GkPbE4z5eoSJy1JK7OphcF0PrrewCb8SQ6E__KwDgjAOKl-vQt-u0wOzIOA8Wz6EDIPzYocelLBhuR9IQBoOfiuix8L8kTWpGqJQpGzdG2V9WNOl5I9A_NPI7JTSnWW-Ck11F8cMKlr_X8reWfnGxh9ng4v6SIr5aUIjmlXmrv7aJqX1SSumUSRi2jGWEjtDmIRI-DXU79_AYHDFlMPM8FwFstAQiPUmIaRCdLAa9nNpEBrEXhaeFJkBYdaavvS3Oeue_TInbaIrH73iMN117DQhmDzO48YucmXhct26xWlWotL-TmeFjd32FJGltBrrZKak3jgkS9ePU81E7odSVOaDrK6-2GoacoZKaph5FsojrvPUGqrML_CZNE5DH-gQ7nGsb960EfMXMNIwAmMu2UV-Mbn8f0bgcTd3jzTJr1YLYtLNkGjuxWoPkk5XaJVYnZWJ6lph2Yd9dF-0NMUIjTNQs-RfxBz5y1gmVD7sULfRFRGqiiwe1GklAg6B7OQ4K8ICK2J9zMwa5i_2rTbTK3zO2BCXWaSWfz8Tt9Q53sQjaXjBphiSLAjSc9Qy0WHk0fkwOm0xfFXXuSZddiB2CgRUsyWupV7o26lSB7CEGu9OgwAX9Fvbcx-DwhG7KsiP7RGKyLxQdBiB6LQLKh7oTfO6zyp_kmUdH_gzw1FcTpQVpEZpKkBtK9Kws4PUNKfab6kumO4x6wy6DV-dF9EL2QATxhTOx7i8I2KekdRtab9oZKLC3Qc5eCAgz1wu2j2E4XCohEAW0llRMPDMKxS_dD8Csz_7aEPgZ_7zYMv6NxhMFg2KwjiEqc6vgMfXL",
+      "link_text": "Click here to Unsubscribe",
+      "confidence": 4
+    },
+    "best_link": "https://03.emailinboundprocessing.com/enc_user/unsubscribe?d=%241%2465XJ6PnlTBt8N%2FwrDRQtmQ%3D%3D%24f%2FIjyz4ZV8K%2FvGEz6MywMKLMXf0iHH9wqwq%2F%2BP%2B%2FKmjpl94x3PLwyjuqVDIE%0A0RDxglO3AUW5DOMIiKJCjPQDU%2FDrPT7zSbAmWFTNoGPIUu258Kc5tYQAQNwB%0AOowqs4CJ3CSiUm%2BaTx47FrLQ0HS3yU94o%2FD44nhqLthYakmC%2Fnf%2Buk13X3XI%0AX4xRoN%2FhAiTmEEjPPass2Uph4cktb6NhKkA5DOcp6%2F%2Fi%2FBSqYgAknWCH8Rxn%0AcHDqo31bbrfxJJQZmCW71BV%2F1V4BUpWH8eIif6OozbxYjiUBsaBsNRh3o142%0AB%2FXe7MrLgNr%2FM%2BhrWMrH6UlkuwSvOvZH2xTAkt0%2Fd%2BW3nTsvQsJ20V9hxoVw%0AgZU64Y4CRqemZsRT3w80gM6v&1=1",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is"
+  },
+  {
+    "sender": "Jooble <subscribe@in.jooble.org>",
+    "sender_domain": "in.jooble.org",
+    "subject": "Your Job Alert has been cancelled - Jobs",
+    "list_unsubscribe_header": null,
+    "footer_link": {
+      "link": "https://in.jooble.org/alert-vacancy/IHWQHJOUSHGLENRPPDHFF/0?fm=1&letterType=5&ed=46192&mid=5c9f9f1d-12c7-401c-a511-739865ea0cfe&utm_source=letter&utm_medium=email&utm_campaign=unsubscribe_confirmation",
+      "link_text": "this link",
+      "confidence": 5
+    },
+    "best_link": "https://in.jooble.org/alert-vacancy/IHWQHJOUSHGLENRPPDHFF/0?fm=1&letterType=5&ed=46192&mid=5c9f9f1d-12c7-401c-a511-739865ea0cfe&utm_source=letter&utm_medium=email&utm_campaign=unsubscribe_confirmation",
+    "best_link_source": "footer",
+    "link_validation": "unverified_possibly_blank"
+  },
+  {
     "sender": "The Frontier by Product Hunt <hi@deeperlearning.producthunt.com>",
     "sender_domain": "deeperlearning.producthunt.com",
     "subject": "\ud83e\udde0 Your AI digest from Product Hunt",

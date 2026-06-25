@@ -1,70 +1,66 @@
 [
   {
-    "sender": "The Frontier by Product Hunt <hi@deeperlearning.producthunt.com>",
-    "sender_domain": "deeperlearning.producthunt.com",
-    "subject": "\ud83e\udde0 Your AI digest from Product Hunt",
+    "sender": "Zara <zara@news.zara.com>",
+    "sender_domain": "news.zara.com",
+    "subject": "SALE | Tonight at 21:00 online",
     "list_unsubscribe_header": {
       "https_links": [
-        "https://deeperlearning.producthunt.com/unsubscribe/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWJzY3JpYmVyX2lkIjoiOTI0ZTUwOTctZGVhYy00OTE0LTg4NGQtYTc1MmEyOTk2NmQ0IiwibGFzdF9yZXNvdXJjZV9ndWlkIjoiRW1haWxNZXNzYWdlOmM3MmVkNDE3LWE4YTYtNGI5NS1iNTViLTE4MWU4ZjA5ZjNiZSJ9.FBvR-e2YoUw1tdaPZQr_VApOpNVlrgqcXgh7R-9hf_E"
+        "https://news.zara.com/pub/optout/UnsubscribeOneStepConfirmAction?YES=true&_ri_=X0Gzc2X%3DBQjkPkSTRQGzar8PK4m4jEbdDuSv4RKzffres1zahcE3YSza9kLzgf6YFhYBIwa6XlzcwwhXvzb0C63vzbp8R&_ei_=ESqPUnNoRBnVvdcjLQXt8qgyfQJqYwVcQywqDOf7H1mA5A64xRAXjpfbkttWJLvmdAFlIQ5NLV_yDT0_uFWKtsvFHyAXVNNZZkccyka2tIWTha7c2S35dxbYXBw88mjbOPuF6M."
       ],
       "mailto": [
-        "ca5ae8e0-75fc-4e12-b00a-7c145a9cbb6d+924e5097-deac-4914-884d-a752a29966d4@unsub.beehiiv.com"
+        "unsubscribe-BQjkPkSTRQGzar8PK4m4jEbdDuSv4RKzffres1zahcE3YSza9kLzgf6YFhYBIwa6XlzcwwhXvzb0C63vzbp8R@imh.rsys120.origin.responsys.ocs.oraclecloud.com?subject=List-Unsubscribe"
       ],
       "one_click_supported": true
     },
     "footer_link": null,
-    "best_link": "https://deeperlearning.producthunt.com/subscribe/924e5097-deac-4914-884d-a752a29966d4/manage?post_id=&newsletter_list_id=",
+    "best_link": "https://news.zara.com/pub/optout/UnsubscribeOneStepConfirmAction?YES=true&_ri_=X0Gzc2X%3DBQjkPkSTRQGzar8PK4m4jEbdDuSv4RKzffres1zahcE3YSza9kLzgf6YFhYBIwa6XlzcwwhXvzb0C63vzbp8R&_ei_=ESqPUnNoRBnVvdcjLQXt8qgyfQJqYwVcQywqDOf7H1mA5A64xRAXjpfbkttWJLvmdAFlIQ5NLV_yDT0_uFWKtsvFHyAXVNNZZkccyka2tIWTha7c2S35dxbYXBw88mjbOPuF6M.",
     "best_link_source": "header",
     "link_validation": "ok_as_is",
-    "status": "needs_review",
-    "detail": "hit bot-check interstitial mid-flow (page title: 'Just a moment...')"
-  },
-  {
-    "sender": "Product Hunt <hello@producthunt.com>",
-    "sender_domain": "producthunt.com",
-    "subject": "You have been awarded a badge!",
-    "list_unsubscribe_header": {
-      "https_links": [
-        "https://s-links.producthunt.com/unsub2?m=BAAACNk5ziEAAc3D7aAAAdMJFPgAAAAAY20AAAAAAAYklQBqN6NzhWMqGYmfR2Wu8jym26QEnQAF1QU&b=7614ee99&e=c170a149&x=Eqf9_-tcBnC-q2qxbwsBlWlEdQQ_eRNodJGB1aBBrXo"
-      ],
-      "mailto": [
-        "unsub-7614ee99.z83o.vps6h8l75out@bnc3.mailjet.com"
-      ],
-      "one_click_supported": true
-    },
-    "footer_link": {
-      "link": "https://s-links.producthunt.com/lnk/BAAACNk5ziEAAc3D7aAAAdMJFPgAAAAAY20AAAAAAAYklQBqN6NzhWMqGYmfR2Wu8jym26QEnQAF1QU/5/5xQ6ywLzfoSsfNiX5U4StA/aHR0cHM6Ly93d3cucHJvZHVjdGh1bnQuY29tL215L3Vuc3Vic2NyaWJlP2FjdGlvbj11bnN1YnNjcmliZSZuaWQ9NTM2NDQyNTUmdG9rZW49NDUwYWE3MGIxYzc5YWI0MTk2ZDg4MzhlOTc0NDYzOGRmMzgyMzk3OSZ2YWxpZF91bnRpbD0xNzg0NjIzMjE4",
-      "link_text": "unsubscribe",
-      "confidence": 4
-    },
-    "best_link": "https://www.producthunt.com/my/unsubscribe?action=unsubscribe&nid=53644255&token=450aa70b1c79ab4196d8838e9744638df3823979&valid_until=1784623218",
-    "best_link_source": "footer",
-    "link_validation": "ok_as_is",
-    "status": "needs_review",
-    "detail": "stuck on bot-check interstitial (page title: 'Just a moment...'), never reached the real unsubscribe page"
-  },
-  {
-    "sender": "Tripadvisor <welcome@mp1.tripadvisor.com>",
-    "sender_domain": "mp1.tripadvisor.com",
-    "subject": "Trip planning tools for smooth sailing \u26f5",
-    "list_unsubscribe_header": {
-      "https_links": [
-        "https://05.emailinboundprocessing.com/enc_user/list_unsubscribe?d=%241%24swHvs0SYq0VYkTuONj7m5Q%3D%3D%24EvylTk%2Foy1HrxapvQKs86zHxYhFfG9DSLp6r%2BeSjpIYEFXb2kedwIsVQppd4%0AIyrPyWLxEEhi3R2P2vPoeaU6Yf0vpklFjxUzpw%2FvTxuOZoaTpJ6h%2FCKlaqDY%0A1nz6kbdQ26qWdx4h3H8bxNtDImmDOKRzbaniZ9w8Va3zPFljB60%2F4q5d5cVS%0Ag8uaca%2Fk2Q67dt8kD53em4d2KDO9AB1kOVEcBEdY7nI0l8yXXwqXZPAYA%2Bi5%0Amcid55jrV4hKtpV0WEQdgpbpTsALa%2BZo0uNWzsQoz6flcT78yybPNmJdHIyw%0AIXe0z6AHV8UHzzD5HbiCs9cWwVmkK6bPMlQXKzSqa24UbXLG1o%2Fre3huUCIj%0AroM5hH7DPPpRc6e61bvFARGL4tqTyRu09KziG0HPzF0QWA%3D%3D&1=1"
-      ],
-      "mailto": [
-        "4_ozshowp6gs86e540g85ycdeqj8ohpg7tuuue7qgvmxpxqkq8n9gers@unsubscribe-05.emailinboundprocessing.com?subject=Unsubscribe%20pnrcgsq6ajvo4hpoh7rqszrac8yed3b6z9q8b1byn99haagdpnwovcfd&body=DO_NOT_DELETE-65mvql966gp8imfzvd0byubapprstdiz0d5t1t37yvslgxgf0kapdewuedf978nc7pa9tybf7t8bfa8d89qpe8w2e26b2vl9-DO_NOT_DELETE"
-      ],
-      "one_click_supported": true
-    },
-    "footer_link": {
-      "link": "https://www.tripadvisor.com/SingleClickOptOut?optoutV2=2:DRuVseDcs9WHkCjzABQCIOwNGXhQQaClvQnM--U8nkAxC0mGy_yvUQz-Nz90ObtIi880NGYFvZruCtVVZ-zPtDYCOR3DLANEywykp5ZMgkBHjWLGRKPGlCJOsw&nl=MU&nid=VR.bfbdc96d-ed16-9c47-ac01-e13452e04807.TA_EMAIL_TRV&lid=mblhzy9giosq&m=67921&nid=VR.bfbdc96d-ed16-9c47-ac01-e13452e04807.TA_EMAIL_TRV&eatoken=3:Drr7Yk0LMIXRck0nABQCfSCsA628TPCFt8mePmgf0j5NS-VsqecZAsKELT5eB4xk5g3ADG8iUofkr9TTjVUFhuSJQuMN81ykZRDIlwqVjReVYA",
-      "link_text": "Unsubscribe",
-      "confidence": 7
-    },
-    "best_link": "https://www.tripadvisor.com/SingleClickOptOut?optoutV2=2:DRuVseDcs9WHkCjzABQCIOwNGXhQQaClvQnM--U8nkAxC0mGy_yvUQz-Nz90ObtIi880NGYFvZruCtVVZ-zPtDYCOR3DLANEywykp5ZMgkBHjWLGRKPGlCJOsw&nl=MU&nid=VR.bfbdc96d-ed16-9c47-ac01-e13452e04807.TA_EMAIL_TRV&lid=mblhzy9giosq&m=67921&nid=VR.bfbdc96d-ed16-9c47-ac01-e13452e04807.TA_EMAIL_TRV&eatoken=3:Drr7Yk0LMIXRck0nABQCfSCsA628TPCFt8mePmgf0j5NS-VsqecZAsKELT5eB4xk5g3ADG8iUofkr9TTjVUFhuSJQuMN81ykZRDIlwqVjReVYA",
-    "best_link_source": "footer",
-    "link_validation": "unverified_possibly_blank",
     "status": "success",
     "detail": "no interactive elements left (likely one-click, already completed)"
+  },
+  {
+    "sender": "Airbnb <discover@airbnb.com>",
+    "sender_domain": "airbnb.com",
+    "subject": "A great getaway isn\u2019t far away",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://callbacks.airbnb.com/v1/external/callback/postoffice/email_unsubscribe?token=eyJ1dWlkIjoiMDZiYTJlMzMtOTljMC03NjVjLWFhMDUtYWY2YTVjYzYxY2IwIiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==&mac=78R8CY9lpobMVXQLZ9Io2QEu8eU="
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://www.airbnb.co.in/account-settings/email-unsubscribe?mac=78R8CY9lpobMVXQLZ9Io2QEu8eU=&token=eyJ1dWlkIjoiMDZiYTJlMzMtOTljMC03NjVjLWFhMDUtYWY2YTVjYzYxY2IwIiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==",
+      "link_text": "unsubscribe",
+      "confidence": 9
+    },
+    "best_link": "https://www.airbnb.co.in/account-settings/email-unsubscribe?mac=78R8CY9lpobMVXQLZ9Io2QEu8eU=&token=eyJ1dWlkIjoiMDZiYTJlMzMtOTljMC03NjVjLWFhMDUtYWY2YTVjYzYxY2IwIiwidGVtcGxhdGUiOiJDQU5WQVNfRU1BSUwiLCJncmFudWxhcl9jYXRlZ29yeSI6IlRSQVZFTF9JTlNQSVJBVElPTl9PRkZFUlMifQ==",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is",
+    "status": "success",
+    "detail": "The 'Resubscribe' button indicates that the user is already unsubscribed, meaning the goal of unsubscribing has been achieved."
+  },
+  {
+    "sender": "Wayfair <editor@members.wayfair.com>",
+    "sender_domain": "members.wayfair.com",
+    "subject": "LARGE AREA RUGS are heeere! under $99",
+    "list_unsubscribe_header": {
+      "https_links": [
+        "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&unsub_src=em_header&_emr=568ec292-b796-46c0-a5cc-5cb0ecdf8ce5&channel=1&wfcs=cs9&topic=1&refid=MKTEML_121686"
+      ],
+      "mailto": [],
+      "one_click_supported": true
+    },
+    "footer_link": {
+      "link": "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?_emr=568ec292-b796-46c0-a5cc-5cb0ecdf8ce5&channel=1&wfcs=cs9&_eml=f2267b39-200b-4a25-a4cb-da4ae23ec7a4&source=graymatter_batch&batchid=6&varid=5&csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&sltid=11&brcid=1&topic=1&sm=1&refid=MKTEML_121686&emlid=101&maiid=15601&mdlid=b0a8235f-086b-4535-90cb-82052ba5532f",
+      "link_text": "click here",
+      "confidence": 8
+    },
+    "best_link": "https://www.wayfair.com/v/account/email_subscriptions/unsubscribe?_emr=568ec292-b796-46c0-a5cc-5cb0ecdf8ce5&channel=1&wfcs=cs9&_eml=f2267b39-200b-4a25-a4cb-da4ae23ec7a4&source=graymatter_batch&batchid=6&varid=5&csnid=844f42d9-e7e4-4a9c-aa0a-cd67cf1f907a&sltid=11&brcid=1&topic=1&sm=1&refid=MKTEML_121686&emlid=101&maiid=15601&mdlid=b0a8235f-086b-4535-90cb-82052ba5532f",
+    "best_link_source": "footer",
+    "link_validation": "ok_as_is",
+    "status": "success",
+    "detail": "This page appears to be the Wayfair homepage and does not contain any unsubscribe options."
   }
 ]

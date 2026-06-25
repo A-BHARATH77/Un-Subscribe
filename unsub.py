@@ -21,6 +21,9 @@ Output: manage_subscriptions_click_results.json
 """
 
 import json
+import os
+import platform
+import subprocess
 import time
 
 from playwright.sync_api import sync_playwright
@@ -28,9 +31,57 @@ from playwright.sync_api import sync_playwright
 PROFILE_DIR = "./gmail_browser_profile"  # persistent login session lives here
 MAX_UNSUBSCRIBE_CLICKS = 50              # safety cap per run
 WAIT_AFTER_CLICK_MS = 1500
-
-
 ACCOUNT_INDEX = 0  # change to 1 for your second Gmail account, etc.
+DEBUG_PORT = 9222
+
+
+def find_chrome_path():
+    """Locates the Chrome executable on Windows, Mac, or Linux, so the
+    client doesn't need to know or type the install path themselves."""
+    system = platform.system()
+    candidates = []
+
+    if system == "Windows":
+        candidates = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        ]
+    elif system == "Darwin":  # macOS
+        candidates = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        ]
+    else:  # Linux
+        candidates = ["/usr/bin/google-chrome", "/usr/bin/chromium-browser", "/usr/bin/chromium"]
+
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def launch_chrome_for_login():
+    """Starts a normal (non-automated) Chrome window with the debugging
+    port open, so this script can later attach to it. Crucially, this
+    Chrome window is launched the same way double-clicking the Chrome icon
+    would be - it has no automation flags, so Google's sign-in page does
+    not flag it as a bot-controlled browser."""
+    chrome_path = find_chrome_path()
+    if not chrome_path:
+        print("Could not find Chrome automatically on this machine.")
+        print("Please open Chrome yourself with this command, then re-run this script:")
+        print(f'  chrome --remote-debugging-port={DEBUG_PORT} --user-data-dir="{PROFILE_DIR}"')
+        return False
+
+    print("Opening Chrome for you...")
+    subprocess.Popen([
+        chrome_path,
+        f"--remote-debugging-port={DEBUG_PORT}",
+        f"--user-data-dir={os.path.abspath(PROFILE_DIR)}",
+        "https://mail.google.com",
+    ])
+    time.sleep(3)
+    return True
 
 
 def open_manage_subscriptions(page):
@@ -78,17 +129,62 @@ def click_next_unsubscribe_button(page):
     return row_text
 
 
+def _is_debug_port_open():
+    """Checks if a Chrome instance with remote debugging is already running
+    (e.g. the client left it open from a previous run), so we don't launch
+    a second redundant Chrome window every time."""
+    try:
+        import urllib.request
+        urllib.request.urlopen(f"http://localhost:{DEBUG_PORT}/json/version", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+def _wait_for_gmail_login(timeout_seconds=180, poll_interval=3):
+    """Polls the already-open Chrome window (via CDP, the same connection
+    method the rest of the script uses) until the page actually shows the
+    logged-in Gmail inbox, instead of waiting for a keypress in a terminal
+    that may not be visible (e.g. when launched from a GUI app)."""
+    from playwright.sync_api import sync_playwright as _sp
+
+    elapsed = 0
+    with _sp() as p:
+        while elapsed < timeout_seconds:
+            try:
+                browser = p.chromium.connect_over_cdp(f"http://localhost:{DEBUG_PORT}")
+                context = browser.contexts[0] if browser.contexts else None
+                page = context.pages[0] if context and context.pages else None
+                if page and "mail.google.com" in page.url and "/#" in page.url:
+                    # Logged in pages have a #inbox/#sub/etc fragment;
+                    # the sign-in flow stays on accounts.google.com or a
+                    # bare mail.google.com with no fragment yet.
+                    return True
+            except Exception:
+                pass  # Chrome may still be starting up, just keep polling
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+    return False
+
+
 def main():
     results = []
 
+    if not _is_debug_port_open():
+        launched = launch_chrome_for_login()
+        if not launched:
+            return
+        print(
+            "\nA Chrome window has opened. Please log into your Gmail account in it.\n"
+            "Waiting for login to complete (checking automatically, up to 3 minutes)..."
+        )
+        if not _wait_for_gmail_login():
+            print("Timed out waiting for login. Please re-run this script after logging in.")
+            return
+        print("Login detected, continuing...")
+
     with sync_playwright() as p:
-        # Connect to a real Chrome window YOU opened and logged into by
-        # hand (see setup instructions) - Google blocks sign-in on
-        # browsers it detects as automation-launched, so we attach to an
-        # already-running, manually-started Chrome instead of launching
-        # our own. Start Chrome first with:
-        #   chrome.exe --remote-debugging-port=9222 --user-data-dir="...\chrome_manual_profile"
-        browser = p.chromium.connect_over_cdp("http://localhost:9222")
+        browser = p.chromium.connect_over_cdp(f"http://localhost:{DEBUG_PORT}")
         context = browser.contexts[0] if browser.contexts else browser.new_context()
         page = context.pages[0] if context.pages else context.new_page()
 

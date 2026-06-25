@@ -101,6 +101,14 @@ Respond with ONLY raw JSON, no markdown, no explanation, in this exact shape:
                 time.sleep(wait)
                 continue
             raise
+        except genai_errors.ServerError as e:
+            # 503 UNAVAILABLE / 500 etc - transient issue on Gemini's side,
+            # not something wrong with our request. Worth a short retry.
+            last_error = e
+            wait = 10 * (retry + 1)  # 10s, 20s, 30s - shorter than rate-limit backoff
+            print(f"    Gemini server temporarily unavailable, waiting {wait}s before retry...")
+            time.sleep(wait)
+            continue
     else:
         return {"action": "done", "index": None,
                 "reason": f"gave up after rate-limit retries: {last_error}"}
@@ -173,7 +181,10 @@ def process_link(page, link):
         if not elements:
             return {"status": "success", "detail": "no interactive elements left (likely one-click, already completed)"}
 
-        decision = ask_llm_for_action(elements, page.title(), attempt)
+        try:
+            decision = ask_llm_for_action(elements, page.title(), attempt)
+        except Exception as e:
+            return {"status": "needs_review", "detail": f"Gemini call failed unexpectedly: {e}"}
 
         if decision["action"] == "done":
             return {"status": "success", "detail": decision.get("reason", "LLM reported completion")}
