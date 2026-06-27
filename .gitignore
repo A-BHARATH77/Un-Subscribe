@@ -5,6 +5,8 @@ token.json
 # Browser automation profile folders (contain real Gmail login session data)
 chrome_manual_profile/
 gmail_browser_profile/
+build/
+dist/
 
 
 # Python

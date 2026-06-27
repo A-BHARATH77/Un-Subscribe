@@ -19,9 +19,17 @@ import html as html_lib
 import json
 import os
 import re
+import sys
 from email import message_from_bytes
 from email.utils import parseaddr
 from urllib.parse import urljoin, urlparse
+
+# Force UTF-8 output regardless of the console's default codepage (e.g.
+# Windows cp1252) and regardless of how this script is launched (directly,
+# via the .exe, or as a subprocess from app.py) - prevents crashes when an
+# email subject contains emoji or other non-Latin-1 characters.
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import requests
 from bs4 import BeautifulSoup
@@ -33,20 +41,21 @@ from googleapiclient.discovery import build
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 MAX_RESULTS = 50  # how many recent emails to scan per run
 
+CREDENTIALS_PATH = os.environ.get("UNSUBHERO_CREDENTIALS_PATH", "credentials.json")
+TOKEN_PATH = os.environ.get("UNSUBHERO_TOKEN_PATH", "token.json")
+
 
 def get_gmail_service():
     creds = None
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    if os.path.exists(TOKEN_PATH):
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
-            )
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=0)
-        with open("token.json", "w") as token_file:
+        with open(TOKEN_PATH, "w") as token_file:
             token_file.write(creds.to_json())
     return build("gmail", "v1", credentials=creds)
 

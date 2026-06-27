@@ -23,6 +23,21 @@ import os
 import sys
 import time
 
+# PyInstaller --onefile extracts to a fresh temp folder every run
+# (_MEIxxxxx), and Playwright's driver otherwise tries to find Chromium
+# relative to that temp location instead of the real, persistent install
+# made by `playwright install chromium`. Setting PLAYWRIGHT_BROWSERS_PATH=0
+# tells Playwright to explicitly use the OS default per-user cache
+# (e.g. %LOCALAPPDATA%\ms-playwright on Windows) where the browser was
+# actually installed, regardless of where this exe happens to unpack to.
+_browsers_path = os.path.expandvars(r"%LOCALAPPDATA%\ms-playwright")
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = _browsers_path
+print(f"[debug] PLAYWRIGHT_BROWSERS_PATH = {os.environ.get('PLAYWRIGHT_BROWSERS_PATH')}")
+print(f"[debug] That folder exists: {os.path.exists(_browsers_path)}")
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from google import genai
 from google.genai import errors as genai_errors
 from playwright.sync_api import sync_playwright

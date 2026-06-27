@@ -23,12 +23,21 @@ Output: manage_subscriptions_click_results.json
 import json
 import os
 import platform
+import sys
+
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = os.path.expandvars(r"%LOCALAPPDATA%\ms-playwright")
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 import subprocess
 import time
 
 from playwright.sync_api import sync_playwright
 
-PROFILE_DIR = "./gmail_browser_profile"  # persistent login session lives here
+import os as _os
+PROFILE_DIR = _os.environ.get(
+    "UNSUBHERO_GMAIL_PROFILE_DIR",
+    "./gmail_browser_profile",
+)  # persistent login session lives here
 MAX_UNSUBSCRIBE_CLICKS = 50              # safety cap per run
 WAIT_AFTER_CLICK_MS = 1500
 ACCOUNT_INDEX = 0  # change to 1 for your second Gmail account, etc.
