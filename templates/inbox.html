@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inbox — MailView</title>
+  <meta name="description" content="Your Gmail inbox viewed beautifully in MailView."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --sidebar: #11131a;
+      --surface: #161921;
+      --surface2: #1e2130;
+      --surface3: #242840;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.04);
+      --text: #e8eaf0;
+      --text-muted: #7b849a;
+      --text-dim: #4a526a;
+      --accent: #5b8af5;
+      --accent2: #a78bfa;
+      --accent-soft: rgba(91,138,245,0.12);
+      --unread: #c8d8ff;
+      --starred: #fbbf24;
+      --glow: rgba(91,138,245,0.2);
+      --red: #f87171;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* === LAYOUT === */
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 60px 1fr;
+      height: 100vh;
+    }
+
+    /* === HEADER === */
+    .header {
+      grid-column: 1 / -1;
+      background: var(--sidebar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px 0 0;
+      gap: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      width: 260px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+    .header-logo .logo-icon {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-logo .logo-icon svg { width: 18px; height: 18px; }
+    .header-logo .logo-name { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
+
+    .search-bar {
+      flex: 1;
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 10px 18px 10px 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-bar input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: var(--surface2);
+    }
+    .search-bar input::placeholder { color: var(--text-dim); }
+    .search-bar .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px 6px 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      cursor: default;
+    }
+    .user-avatar {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .user-email { font-size: 0.78rem; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .btn-logout {
+      padding: 7px 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.07); }
+
+    /* === SIDEBAR === */
+    .sidebar {
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      margin-top: 16px;
+      margin-bottom: 4px;
+    }
+    .sidebar-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      padding: 0 12px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover { background: var(--surface); color: var(--text); }
+    .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; }
+    .nav-item.active svg { opacity: 1; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 100px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    /* === CONTENT === */
+    .content {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .content-header {
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--surface);
+    }
+    .content-title {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .content-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* === EMAIL LIST === */
+    .email-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .email-list::-webkit-scrollbar { width: 5px; }
+    .email-list::-webkit-scrollbar-track { background: transparent; }
+    .email-list::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 100px; }
+
+    .email-item {
+      display: grid;
+      grid-template-columns: 48px 200px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-bottom: 1px solid var(--border2);
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+    }
+    .email-item:hover { background: var(--surface); }
+    .email-item.unread { background: rgba(91,138,245,0.04); }
+    .email-item.unread:hover { background: var(--surface); }
+
+    /* Unread indicator bar */
+    .email-item.unread::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      border-radius: 0 2px 2px 0;
+    }
+
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      flex-self: center;
+    }
+
+    .email-sender {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .email-item.unread .email-sender { color: var(--unread); font-weight: 600; }
+
+    .email-main { overflow: hidden; }
+    .email-subject {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .email-item.unread .email-subject { color: var(--text); font-weight: 600; }
+
+    .email-snippet {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .email-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .email-date {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .email-item.unread .email-date { color: var(--accent); font-weight: 600; }
+
+    .star-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-dim);
+      padding: 2px;
+      transition: color 0.15s, transform 0.15s;
+      line-height: 1;
+    }
+    .star-btn:hover { transform: scale(1.2); }
+    .star-btn.starred { color: var(--starred); }
+    .star-btn svg { width: 14px; height: 14px; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 16px;
+      color: var(--text-dim);
+    }
+    .empty-state svg { width: 64px; height: 64px; opacity: 0.3; }
+    .empty-state h3 { font-size: 1rem; font-weight: 500; color: var(--text-muted); }
+    .empty-state p { font-size: 0.85rem; }
+
+    /* Loading spinner */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 16px;
+      color: var(--text-muted);
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--surface3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Avatar colors */
+    .av-0 { background: linear-gradient(135deg, #5b8af5, #a78bfa); }
+    .av-1 { background: linear-gradient(135deg, #f472b6, #fb923c); }
+    .av-2 { background: linear-gradient(135deg, #34d399, #06b6d4); }
+    .av-3 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+    .av-4 { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+    .av-5 { background: linear-gradient(135deg, #10b981, #3b82f6); }
+    .av-6 { background: linear-gradient(135deg, #f97316, #eab308); }
+    .av-7 { background: linear-gradient(135deg, #06b6d4, #6366f1); }
+
+    /* ── Automation toggle button ─────────────────────────────────────── */
+    .btn-automation {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: linear-gradient(135deg, rgba(91,138,245,0.15), rgba(167,139,250,0.12));
+      border: 1px solid rgba(91,138,245,0.4);
+      border-radius: 10px;
+      color: #93c5fd;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      margin-left: auto;
+      white-space: nowrap;
+      position: relative;
+    }
+    .btn-automation:hover {
+      background: linear-gradient(135deg, rgba(91,138,245,0.28), rgba(167,139,250,0.22));
+      border-color: rgba(91,138,245,0.65);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(91,138,245,0.25);
+    }
+    .btn-automation.running {
+      background: linear-gradient(135deg, rgba(248,113,113,0.15), rgba(251,146,60,0.12));
+      border-color: rgba(248,113,113,0.45);
+      color: #fca5a5;
+    }
+    .btn-automation.running:hover {
+      background: linear-gradient(135deg, rgba(248,113,113,0.28), rgba(251,146,60,0.22));
+      border-color: rgba(248,113,113,0.65);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(248,113,113,0.25);
+    }
+    .btn-automation svg { width: 14px; height: 14px; }
+    /* Pulsing dot shown while automation is running */
+    .auto-pulse {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #f87171;
+      animation: pulse-dot 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.65); }
+    }
+
+    /* ── Progress Drawer ──────────────────────────────────────────────────── */
+    .unsub-drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+    }
+    .unsub-drawer-overlay.active { display: block; }
+
+    .unsub-drawer {
+      position: fixed;
+      right: 0; top: 0; bottom: 0;
+      width: 460px;
+      max-width: 95vw;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(110%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -16px 0 48px rgba(0,0,0,0.4);
+    }
+    .unsub-drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .drawer-title {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+    .drawer-close {
+      width: 30px; height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .drawer-close:hover { border-color: var(--red); color: var(--red); }
+
+    /* Progress bar */
+    .drawer-progress-bar-wrap {
+      padding: 14px 22px 0;
+      flex-shrink: 0;
+    }
+    .drawer-progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .progress-track {
+      height: 5px;
+      background: var(--surface3);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f87171, #fb923c);
+      border-radius: 100px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* Email rows in drawer */
+    .drawer-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 8px;
+    }
+    .drawer-list::-webkit-scrollbar { width: 4px; }
+    .drawer-list::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 100px; }
+
+    .drawer-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      transition: background 0.15s;
+      font-size: 0.83rem;
+    }
+    .drawer-row:hover { background: var(--surface2); }
+    .drawer-row-icon { font-size: 1.1rem; flex-shrink: 0; width: 22px; text-align: center; }
+    .drawer-row-info { flex: 1; overflow: hidden; }
+    .drawer-row-sender {
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .drawer-row-subject {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .drawer-row-status {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 100px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .status-processing { background: rgba(91,138,245,0.15); color: var(--accent); }
+    .status-success    { background: rgba(52,211,153,0.13); color: #34d399; }
+    .status-skipped    { background: rgba(251,191,36,0.12); color: #fbbf24; }
+    .status-not_found  { background: rgba(148,163,184,0.1); color: var(--text-muted); }
+    .status-error      { background: rgba(248,113,113,0.12); color: #f87171; }
+
+    /* Summary card */
+    .drawer-summary {
+      padding: 18px 22px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .summary-cell {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .summary-num {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .summary-label { font-size: 0.68rem; color: var(--text-muted); }
+    .s-success { color: #34d399; }
+    .s-skipped { color: #fbbf24; }
+    .s-notfound { color: var(--text-muted); }
+    .s-error   { color: #f87171; }
+    .btn-drawer-close-bottom {
+      width: 100%;
+      padding: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-drawer-close-bottom:hover { background: var(--surface3); color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="3"/>
+          <polyline points="2,4 12,13 22,4"/>
+        </svg>
+      </div>
+      <span class="logo-name">MailView</span>
+    </div>
+
+    <div class="search-bar">
+      <span class="search-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+      <input type="text" id="search-input" placeholder="Search in mail…" autocomplete="off"/>
+    </div>
+
+    <div class="header-right">
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar-header">M</div>
+        <span class="user-email">{{ user_email }}</span>
+      </div>
+      <a href="/logout" class="btn-logout" id="logout-btn">Sign out</a>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <button class="nav-item active" id="nav-inbox" onclick="loadLabel('INBOX')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+      </svg>
+      Unread
+      {% set unread_count = emails | length %}
+      {% if unread_count > 0 %}
+      <span class="nav-badge">{{ unread_count }}</span>
+      {% endif %}
+    </button>
+
+    <button class="nav-item" id="nav-starred" onclick="loadLabel('STARRED')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      Starred
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+    <div class="content-header">
+      <h1 class="content-title" id="content-title">Unread</h1>
+      <span class="content-count" id="content-count">{{ emails|length }} unread</span>
+
+      <!-- Automation toggle button -->
+      <button class="btn-automation" id="btn-automation" onclick="toggleAutomation()">
+        <svg id="auto-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <span id="auto-btn-label">Start Automation</span>
+      </button>
+    </div>
+
+    <div class="email-list" id="email-list">
+      {% if emails %}
+        {% for email in emails %}
+        {% set color_idx = loop.index0 % 8 %}
+        <a class="email-item {% if email.is_unread %}unread{% endif %}" 
+           href="/email/{{ email.id }}" 
+           id="email-{{ email.id }}">
+          <div class="avatar av-{{ color_idx }}">{{ email.initials }}</div>
+          <span class="email-sender">{{ email.sender_name }}</span>
+          <div class="email-main">
+            <div class="email-subject">{{ email.subject }}</div>
+            <div class="email-snippet">{{ email.snippet }}</div>
+          </div>
+          <div class="email-meta">
+            <span class="email-date">{{ email.date }}</span>
+            {% if email.is_starred %}
+            <span class="star-btn starred">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+          </svg>
+          <h3>No emails found</h3>
+          <p>Your inbox is empty or no emails matched.</p>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+<!-- ── Unsub All Drawer Overlay ─────────────────────────────────────────── -->
+<div class="unsub-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- ── Unsub All Progress Drawer ─────────────────────────────────────────── -->
+<div class="unsub-drawer" id="unsub-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">🚫 Unsubscribe All</div>
+    <button class="drawer-close" onclick="closeDrawer()" title="Close">✕</button>
+  </div>
+
+  <div class="drawer-progress-bar-wrap">
+    <div class="drawer-progress-info">
+      <span id="drawer-progress-text">Ready</span>
+      <span id="drawer-progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <div class="drawer-list" id="drawer-list"></div>
+
+  <div class="drawer-summary" id="drawer-summary" style="display:none">
+    <div class="summary-grid">
+      <div class="summary-cell">
+        <div class="summary-num s-success" id="sum-success">0</div>
+        <div class="summary-label">Unsubscribed</div>
+      </div>
+      <div class="summary-cell">
+        <div class="summary-num s-skipped" id="sum-skipped">0</div>
+        <div class="summary-label">Skipped</div>
+      </div>
+      <div class="summary-cell">
+        <div class="summary-num s-notfound" id="sum-notfound">0</div>
+        <div class="summary-label">No Link</div>
+      </div>
+      <div class="summary-cell">
+        <div class="summary-num s-error" id="sum-error">0</div>
+        <div class="summary-label">Errors</div>
+      </div>
+    </div>
+    <button class="btn-drawer-close-bottom" onclick="closeDrawer()">Close</button>
+  </div>
+</div>
+
+<script>
+  // Set user avatar initial
+  const emailAddr = document.querySelector('.user-email')?.textContent || '';
+  const initial = emailAddr.charAt(0).toUpperCase();
+  const avatarEl = document.getElementById('user-avatar-header');
+  if (avatarEl) avatarEl.textContent = initial;
+
+  // Label navigation
+  const navItems = document.querySelectorAll('.nav-item');
+  function setActiveNav(el) {
+    navItems.forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function renderEmails(emails, title) {
+    const list = document.getElementById('email-list');
+    const titleEl = document.getElementById('content-title');
+    const countEl = document.getElementById('content-count');
+    titleEl.textContent = title;
+    countEl.textContent = emails.length + ' conversations';
+
+    if (!emails.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:64px;height:64px;opacity:0.3">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+          </svg>
+          <h3 style="font-size:1rem;font-weight:500;color:var(--text-muted)">No emails found</h3>
+          <p style="font-size:0.85rem;">Nothing here yet.</p>
+        </div>`;
+      return;
+    }
+
+    const colors = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
+    list.innerHTML = emails.map((e, i) => `
+      <a class="email-item ${e.is_unread ? 'unread' : ''}" href="/email/${e.id}" id="email-${e.id}">
+        <div class="avatar ${colors[i % 8]}">${e.initials}</div>
+        <span class="email-sender">${escHtml(e.sender_name)}</span>
+        <div class="email-main">
+          <div class="email-subject">${escHtml(e.subject)}</div>
+          <div class="email-snippet">${escHtml(e.snippet)}</div>
+        </div>
+        <div class="email-meta">
+          <span class="email-date">${escHtml(e.date)}</span>
+          ${e.is_starred ? '<span class="star-btn starred"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>' : ''}
+        </div>
+      </a>`).join('');
+  }
+
+  function showLoading() {
+    document.getElementById('email-list').innerHTML = `
+      <div class="loading">
+        <div class="spinner"></div>
+        <span>Loading emails…</span>
+      </div>`;
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function loadLabel(label) {
+    const labels = { 'INBOX': 'Inbox', 'STARRED': 'Starred', 'SENT': 'Sent', 'DRAFT': 'Drafts', 'SPAM': 'Spam' };
+    const navEl = document.getElementById('nav-' + label.toLowerCase());
+    if (navEl) setActiveNav(navEl);
+    document.getElementById('content-title').textContent = labels[label] || label;
+    showLoading();
+    fetch(`/api/emails?label=${label}`)
+      .then(r => r.json())
+      .then(data => renderEmails(data, labels[label] || label))
+      .catch(() => renderEmails([], labels[label] || label));
+  }
+
+  function loadQuery(q) {
+    showLoading();
+    const title = q.split(':')[1] || q;
+    document.getElementById('content-title').textContent = title.charAt(0).toUpperCase() + title.slice(1);
+    fetch(`/api/emails?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => renderEmails(data, title.charAt(0).toUpperCase() + title.slice(1)))
+      .catch(() => renderEmails([], title));
+  }
+
+  // Search
+  let searchTimer;
+  document.getElementById('search-input').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    const q = this.value.trim();
+    searchTimer = setTimeout(() => {
+      if (q.length > 1) {
+        showLoading();
+        document.getElementById('content-title').textContent = `Results for "${q}"`;
+        fetch(`/api/emails?q=${encodeURIComponent(q)}&label=`)
+          .then(r => r.json())
+          .then(data => renderEmails(data, `Results for "${q}"`))
+          .catch(() => renderEmails([], 'Search'));
+      } else if (q.length === 0) {
+        loadLabel('INBOX');
+        navItems.forEach(n => n.classList.remove('active'));
+        document.getElementById('nav-inbox')?.classList.add('active');
+      }
+    }, 400);
+  });
+
+  // ── Automation (SSE) ─────────────────────────────────────────────────────
+  let activeSSE = null;
+  let automationRunning = false;
+
+  function openDrawer() {
+    document.getElementById('drawer-overlay').classList.add('active');
+    document.getElementById('unsub-drawer').classList.add('open');
+  }
+
+  function closeDrawer() {
+    document.getElementById('drawer-overlay').classList.remove('active');
+    document.getElementById('unsub-drawer').classList.remove('open');
+    // Closing the drawer does NOT stop the automation
+  }
+
+  function setAutomationButtonRunning(running) {
+    const btn = document.getElementById('btn-automation');
+    const icon = document.getElementById('auto-btn-icon');
+    const label = document.getElementById('auto-btn-label');
+
+    // Remove any existing pulse dot
+    const existingDot = btn.querySelector('.auto-pulse');
+    if (existingDot) existingDot.remove();
+
+    if (running) {
+      btn.classList.add('running');
+      // Switch icon to stop square
+      icon.innerHTML = '<rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" stroke="none"/>';
+      label.textContent = 'Stop Automation';
+      // Add pulsing dot
+      const dot = document.createElement('span');
+      dot.className = 'auto-pulse';
+      btn.insertBefore(dot, btn.firstChild);
+    } else {
+      btn.classList.remove('running');
+      // Switch icon back to play triangle
+      icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+      label.textContent = 'Start Automation';
+    }
+  }
+
+  function toggleAutomation() {
+    if (automationRunning) {
+      stopAutomation();
+    } else {
+      startAutomation();
+    }
+  }
+
+  function stopAutomation() {
+    automationRunning = false;
+    if (activeSSE) { activeSSE.close(); activeSSE = null; }
+    setAutomationButtonRunning(false);
+    // Mark progress as stopped if drawer is open
+    const progressText = document.getElementById('drawer-progress-text');
+    if (progressText && progressText.textContent !== 'Complete!') {
+      progressText.textContent = 'Stopped.';
+    }
+  }
+
+  function startAutomation() {
+    automationRunning = true;
+    setAutomationButtonRunning(true);
+
+    // Fetch all current unread mail IDs from the backend
+    fetch('/api/unread-ids')
+      .then(r => r.json())
+      .then(data => {
+        if (!automationRunning) return;  // user stopped while fetching
+        const ids = data.ids || [];
+        if (!ids.length) {
+          // Inbox is clean — wait and check again
+          document.getElementById('drawer-progress-text').textContent = 'Inbox clean. Checking again in 2 mins…';
+          setTimeout(() => {
+            if (automationRunning) startAutomation();
+          }, 120000);
+          return;
+        }
+        runUnsubStream(ids);
+      })
+      .catch(err => {
+        // On network error, retry after delay instead of stopping
+        console.error('Failed to fetch unread IDs:', err);
+        if (automationRunning) {
+          setTimeout(() => {
+            if (automationRunning) startAutomation();
+          }, 120000);
+        }
+      });
+  }
+
+  function runUnsubStream(ids) {
+    // Reset drawer UI
+    document.getElementById('drawer-list').innerHTML = '';
+    document.getElementById('drawer-summary').style.display = 'none';
+    document.getElementById('progress-fill').style.width = '0%';
+    document.getElementById('drawer-progress-text').textContent = `Processing 0 of ${ids.length}`;
+    document.getElementById('drawer-progress-pct').textContent = '0%';
+
+    openDrawer();
+
+    // Start SSE stream
+    const url = `/api/unsubscribe/all?ids=${encodeURIComponent(ids.join(','))}`;
+    activeSSE = new EventSource(url);
+
+    activeSSE.onmessage = function(e) {
+      if (!automationRunning) {
+        activeSSE.close(); activeSSE = null;
+        return;
+      }
+      const data = JSON.parse(e.data);
+
+      if (data.type === 'processing') {
+        updateProgress(data.index, data.total);
+        addDrawerRow(data.msg_id, data.sender, data.subject, 'processing', '⏳', 'Processing…');
+
+      } else if (data.type === 'result') {
+        updateProgress(data.index + 1, data.total);
+        updateDrawerRow(data.msg_id, data.status, data);
+
+      } else if (data.type === 'done') {
+        activeSSE.close();
+        activeSSE = null;
+        showSummary(data);
+        document.getElementById('drawer-progress-text').textContent = 'Complete! Checking again in 2 mins…';
+        document.getElementById('drawer-progress-pct').textContent = '100%';
+        document.getElementById('progress-fill').style.width = '100%';
+        // Automation loops forever — poll again after 2 minutes
+        if (automationRunning) {
+          setTimeout(() => {
+            if (automationRunning) startAutomation();
+          }, 120000);
+        }
+      }
+    };
+
+    activeSSE.onerror = function() {
+      if (activeSSE) { activeSSE.close(); activeSSE = null; }
+      if (automationRunning) {
+        document.getElementById('drawer-progress-text').textContent = 'Connection error.';
+        stopAutomation();
+      }
+    };
+  }
+
+  function updateProgress(done, total) {
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('drawer-progress-text').textContent = `Processing ${done} of ${total}`;
+    document.getElementById('drawer-progress-pct').textContent = pct + '%';
+  }
+
+  const STATUS_ICONS = {
+    processing: '⏳',
+    success:    '✅',
+    skipped:    '⏭️',
+    not_found:  '🔍',
+    error:      '❌',
+    ai:         '🤖',  // Gemini AI handled
+  };
+  const STATUS_LABELS = {
+    processing: 'Processing…',
+    success:    'Unsubscribed',
+    skipped:    'Skipped',
+    not_found:  'No link',
+    error:      'Error',
+    ai:         'AI Unsubscribed',
+  };
+
+  function addDrawerRow(msgId, sender, subject, status, icon, label) {
+    const list = document.getElementById('drawer-list');
+    const row = document.createElement('div');
+    row.className = 'drawer-row';
+    row.id = `drow-${msgId}`;
+    row.innerHTML = `
+      <div class="drawer-row-icon">${icon}</div>
+      <div class="drawer-row-info">
+        <div class="drawer-row-sender">${escHtml(sender)}</div>
+        <div class="drawer-row-subject">${escHtml(subject)}</div>
+      </div>
+      <span class="drawer-row-status status-${status}">${escHtml(label)}</span>
+    `;
+    list.appendChild(row);
+    // Auto-scroll to keep latest row visible
+    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function updateDrawerRow(msgId, status, data) {
+    const row = document.getElementById(`drow-${msgId}`);
+    if (!row) return;
+    const icon  = STATUS_ICONS[status]  || '❓';
+    const label = STATUS_LABELS[status] || status;
+    const iconEl   = row.querySelector('.drawer-row-icon');
+    const statusEl = row.querySelector('.drawer-row-status');
+    if (iconEl)   iconEl.textContent = icon;
+    if (statusEl) {
+      statusEl.textContent = label;
+      statusEl.className = `drawer-row-status status-${status}`;
+    }
+    if (data.reason) row.title = data.reason;
+
+    // On success: visually mark the email row in the inbox list as done
+    if (status === 'success') {
+      // Fade the drawer row itself
+      row.style.opacity = '0.55';
+
+      // Fade + strike the inbox email-item row
+      const emailRow = document.getElementById(`email-${msgId}`);
+      if (emailRow) {
+        emailRow.style.transition = 'opacity 0.6s ease';
+        emailRow.style.opacity = '0.35';
+        // Add a subtle "done" badge
+        const badge = document.createElement('span');
+        badge.textContent = '\u2714 Unsubscribed';
+        badge.style.cssText = [
+          'position:absolute', 'right:16px', 'top:50%',
+          'transform:translateY(-50%)',
+          'font-size:0.7rem', 'font-weight:600',
+          'color:#34d399', 'background:rgba(52,211,153,0.12)',
+          'border:1px solid rgba(52,211,153,0.3)',
+          'border-radius:100px', 'padding:2px 10px',
+          'pointer-events:none'
+        ].join(';');
+        // emailRow needs position:relative (already set)
+        emailRow.style.position = 'relative';
+        emailRow.appendChild(badge);
+
+        // Remove from list after 3 seconds
+        setTimeout(() => {
+          emailRow.style.transition = 'all 0.5s ease';
+          emailRow.style.opacity = '0';
+          emailRow.style.maxHeight = '0';
+          emailRow.style.overflow = 'hidden';
+          emailRow.style.padding = '0';
+          setTimeout(() => emailRow.remove(), 500);
+        }, 3000);
+      }
+    }
+  }
+
+  function showSummary(data) {
+    document.getElementById('sum-success').textContent  = data.success   || 0;
+    document.getElementById('sum-skipped').textContent  = data.skipped   || 0;
+    document.getElementById('sum-notfound').textContent = data.not_found || 0;
+    document.getElementById('sum-error').textContent    = data.errors    || 0;
+    document.getElementById('drawer-summary').style.display = 'block';
+  }
+  // Auto-start automation when page loads
+  document.addEventListener('DOMContentLoaded', () => {
+    startAutomation();
+  });
+</script>
+</body>
+</html>
