@@ -838,12 +838,15 @@ def run(
     logger.info("Unsubscribe URL: %s", url)
     logger.info("User email: %s", user_email or "(not provided)")
 
-    # ── Step 2: Open in visible Chromium ─────────────────────────────────────
+    # ── Step 2: Open in Chromium ──────────────────────────────────────────────
+    # headless=True in production (Render has no display); set
+    # PLAYWRIGHT_HEADLESS=false locally to watch the browser.
+    _headless = os.environ.get("PLAYWRIGHT_HEADLESS", "true").lower() != "false"
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.launch(
-                headless=False,
-                slow_mo=700,
+                headless=_headless,
+                slow_mo=700 if not _headless else 0,
                 args=[
                     "--no-sandbox",
                     "--disable-dev-shm-usage",

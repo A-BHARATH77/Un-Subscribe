@@ -6,6 +6,7 @@ import hashlib
 import secrets
 import logging
 import threading
+import time
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -28,9 +29,13 @@ logging.getLogger("unsubscribe_engine").setLevel(logging.INFO)
 app = Flask(__name__)
 
 # ── Persistent secret key ────────────────────────────────────────────────────
-# Generated once and saved to disk so Flask session cookies survive restarts.
+# On Render: set FLASK_SECRET_KEY env var (disk is ephemeral).
+# Locally: generated once and saved to .secret_key file.
 SECRET_KEY_FILE = os.path.join(os.path.dirname(__file__), ".secret_key")
-if os.path.exists(SECRET_KEY_FILE):
+_env_secret = os.environ.get("FLASK_SECRET_KEY", "").strip()
+if _env_secret:
+    app.secret_key = _env_secret.encode()
+elif os.path.exists(SECRET_KEY_FILE):
     with open(SECRET_KEY_FILE, "rb") as f:
         app.secret_key = f.read()
 else:
@@ -39,29 +44,52 @@ else:
         f.write(app.secret_key)
 
 # ── Token persistence ────────────────────────────────────────────────────────
-# OAuth token is saved to token.json so the user stays logged in across
-# server restarts without having to go through Google's consent screen again.
+# OAuth token is saved to token.json locally.
+# On Render (ephemeral disk) it is stored in the TOKEN_JSON env variable.
 TOKEN_FILE = os.path.join(os.path.dirname(__file__), "token.json")
 
-# Allow HTTP for local development
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+# ── OAuth transport ───────────────────────────────────────────────────────────
+# Allow HTTP only in local development; Render always uses HTTPS.
+_on_render = bool(os.environ.get("RENDER"))
+if not _on_render:
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 # Don't raise an error if Google returns extra scopes in the token response
 os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
+
+# credentials.json path — on Render, written from GOOGLE_CREDENTIALS env var
 CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), "credentials.json")
+if _on_render:
+    _creds_env = os.environ.get("GOOGLE_CREDENTIALS", "")
+    if _creds_env and not os.path.exists(CREDENTIALS_FILE):
+        with open(CREDENTIALS_FILE, "w") as _f:
+            _f.write(_creds_env)
+
 # Temporary file that holds state + code_verifier across the OAuth redirect
 OAUTH_STATE_FILE = os.path.join(os.path.dirname(__file__), ".oauth_state.json")
 
 
 def save_token(creds_dict):
-    """Write token dict to disk."""
+    """Write token dict to disk and sync to TOKEN_JSON env var for Render."""
     with open(TOKEN_FILE, "w") as f:
         json.dump(creds_dict, f)
+    # Keep the env var in sync so other processes (e.g. background thread) see it
+    os.environ["TOKEN_JSON"] = json.dumps(creds_dict)
 
 
 def load_token():
-    """Read token dict from disk, or None if it doesn't exist."""
+    """
+    Read token dict. Priority:
+      1. TOKEN_JSON environment variable  (Render / ephemeral disk)
+      2. token.json file on disk          (local development)
+    """
+    env_token = os.environ.get("TOKEN_JSON", "").strip()
+    if env_token:
+        try:
+            return json.loads(env_token)
+        except Exception:
+            pass
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, "r") as f:
             return json.load(f)
@@ -488,7 +516,6 @@ def _send_result_reply(service, msg_id: str, result: dict) -> bool:
 
         method  = result.get("method") or "automated"
         reason  = result.get("reason") or ""
-        url     = result.get("url") or "N/A"
 
         body = (
             f"Hi,\n\n"
@@ -497,7 +524,6 @@ def _send_result_reply(service, msg_id: str, result: dict) -> bool:
             f"Details:\n"
             f"  Status : Successfully unsubscribed\n"
             f"  Method : {method}\n"
-            f"  URL    : {url}\n"
             f"  Note   : {reason}\n\n"
             f"Please ensure my email address is permanently removed from all your "
             f"mailing lists and distribution groups.\n\n"
@@ -680,5 +706,217 @@ def logout():
     return redirect(url_for("index"))
 
 
+# ── Server-side background auto-unsubscribe scheduler ────────────────────────
+# Runs independently of the browser UI. On every 2-minute cycle it:
+#   1. Loads credentials from token.json (no active session required)
+#   2. Fetches all unread INBOX messages
+#   3. Skips any message IDs already processed in this session
+#   4. Runs the unsubscribe engine on each new unread email
+
+AUTO_INTERVAL_SECONDS = 120   # 2 minutes
+
+_auto_state = {
+    "running":       False,     # True while the scheduler loop is alive
+    "last_run":      None,      # ISO timestamp of the last check
+    "next_run":      None,      # ISO timestamp of the upcoming check
+    "processed_ids": set(),     # IDs handled so far (avoids re-processing)
+    "cycle_count":   0,         # How many polling cycles have completed
+    "last_results":  [],        # Summary of the most-recent cycle
+    "thread":        None,      # Background thread reference
+}
+_auto_state_lock = threading.Lock()
+
+
+def _build_service_from_token():
+    """Build a Gmail service purely from the saved token.json, no Flask session."""
+    token_data = load_token()
+    if not token_data:
+        return None
+
+    # Reject read-only tokens
+    saved_scopes = token_data.get("scopes") or []
+    if isinstance(saved_scopes, str):
+        saved_scopes = saved_scopes.split()
+    if all("readonly" in s for s in saved_scopes if "gmail" in s):
+        logger.warning("[AutoUnsub] Token is read-only — skipping.")
+        return None
+
+    creds = Credentials(
+        token=token_data["token"],
+        refresh_token=token_data["refresh_token"],
+        token_uri=token_data["token_uri"],
+        client_id=token_data["client_id"],
+        client_secret=token_data["client_secret"],
+        scopes=token_data["scopes"],
+    )
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        save_token(credentials_to_dict(creds))
+    return build("gmail", "v1", credentials=creds)
+
+
+def _run_auto_cycle():
+    """Execute one full unsubscribe cycle: fetch unread → unsub each new one."""
+    logger.info("[AutoUnsub] Starting cycle #%d", _auto_state["cycle_count"] + 1)
+
+    service = _build_service_from_token()
+    if service is None:
+        logger.info("[AutoUnsub] No valid credentials yet — skipping cycle.")
+        return
+
+    # Fetch unread inbox IDs
+    try:
+        result = service.users().messages().list(
+            userId="me", labelIds=["INBOX", "UNREAD"], maxResults=50
+        ).execute()
+        all_ids = [m["id"] for m in result.get("messages", [])]
+    except Exception as exc:
+        logger.warning("[AutoUnsub] Failed to fetch unread IDs: %s", exc)
+        return
+
+    # Only process IDs we haven't touched yet
+    with _auto_state_lock:
+        new_ids = [i for i in all_ids if i not in _auto_state["processed_ids"]]
+
+    if not new_ids:
+        logger.info("[AutoUnsub] No new unread emails — inbox clean.")
+        with _auto_state_lock:
+            _auto_state["last_results"] = []
+            _auto_state["cycle_count"] += 1
+            _auto_state["last_run"] = datetime.now().isoformat()
+        return
+
+    logger.info("[AutoUnsub] %d new unread email(s) to process.", len(new_ids))
+    user_email = ""
+    try:
+        profile = service.users().getProfile(userId="me").execute()
+        user_email = profile.get("emailAddress", "")
+    except Exception:
+        pass
+
+    cycle_results = []
+    for msg_id in new_ids:
+        # Fetch subject / sender for logging
+        subject = "(unknown)"
+        sender  = "(unknown)"
+        try:
+            meta = service.users().messages().get(
+                userId="me", id=msg_id, format="metadata",
+                metadataHeaders=["Subject", "From"]
+            ).execute()
+            for h in meta.get("payload", {}).get("headers", []):
+                if h["name"].lower() == "subject":
+                    subject = h["value"]
+                elif h["name"].lower() == "from":
+                    sender = get_sender_name(h["value"])
+        except Exception:
+            pass
+
+        logger.info("[AutoUnsub] Processing: %s — %s", sender, subject)
+
+        result = {"status": "error", "method": None, "reason": "Unknown", "url": None}
+        try:
+            html_body, list_unsub = _get_email_full(service, msg_id)
+            result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email)
+        except Exception as exc:
+            result = {"status": "error", "method": None, "reason": str(exc), "url": None}
+
+        # Always mark as read once we've attempted to process the email
+        # (prevents it reappearing as unread on the next cycle)
+        _mark_as_read(service, msg_id)
+        # Only send a reply on successful unsubscribe
+        if result.get("status") == "success":
+            _send_result_reply(service, msg_id, result)
+
+        # Mark this ID as processed regardless of outcome so we don't retry endlessly
+        with _auto_state_lock:
+            _auto_state["processed_ids"].add(msg_id)
+
+        cycle_results.append({
+            "msg_id":  msg_id,
+            "sender":  sender,
+            "subject": subject,
+            "status":  result.get("status"),
+            "method":  result.get("method"),
+            "reason":  result.get("reason"),
+        })
+        logger.info(
+            "[AutoUnsub] %s → status=%s method=%s",
+            sender, result.get("status"), result.get("method")
+        )
+
+    with _auto_state_lock:
+        _auto_state["last_results"] = cycle_results
+        _auto_state["cycle_count"] += 1
+        _auto_state["last_run"] = datetime.now().isoformat()
+
+    logger.info("[AutoUnsub] Cycle complete — %d email(s) processed.", len(new_ids))
+
+
+def _auto_scheduler_loop():
+    """Background thread: run a cycle immediately, then repeat every 2 minutes."""
+    logger.info("[AutoUnsub] Background scheduler started (interval=%ds).", AUTO_INTERVAL_SECONDS)
+    with _auto_state_lock:
+        _auto_state["running"] = True
+
+    while True:
+        with _auto_state_lock:
+            if not _auto_state["running"]:
+                break
+
+        # Set next_run timestamp before sleeping
+        next_ts = datetime.fromtimestamp(
+            time.time() + AUTO_INTERVAL_SECONDS
+        ).isoformat()
+        with _auto_state_lock:
+            _auto_state["next_run"] = next_ts
+
+        try:
+            _run_auto_cycle()
+        except Exception as exc:
+            logger.exception("[AutoUnsub] Unexpected error in cycle: %s", exc)
+
+        # Sleep in small increments so we can respond quickly to stop signals
+        for _ in range(AUTO_INTERVAL_SECONDS * 2):   # 0.5-second ticks
+            with _auto_state_lock:
+                if not _auto_state["running"]:
+                    break
+            time.sleep(0.5)
+
+    logger.info("[AutoUnsub] Background scheduler stopped.")
+
+
+def start_auto_scheduler():
+    """Spawn the background scheduler thread (idempotent)."""
+    with _auto_state_lock:
+        if _auto_state["running"] and _auto_state["thread"] and _auto_state["thread"].is_alive():
+            logger.info("[AutoUnsub] Scheduler already running — skipping duplicate start.")
+            return
+        _auto_state["running"] = True
+
+    t = threading.Thread(target=_auto_scheduler_loop, daemon=True, name="auto-unsub-scheduler")
+    with _auto_state_lock:
+        _auto_state["thread"] = t
+    t.start()
+    logger.info("[AutoUnsub] Scheduler thread launched.")
+
+
+@app.route("/api/auto-status")
+def api_auto_status():
+    """Return the current state of the server-side auto-unsubscribe scheduler."""
+    with _auto_state_lock:
+        return jsonify({
+            "running":      _auto_state["running"],
+            "last_run":     _auto_state["last_run"],
+            "next_run":     _auto_state["next_run"],
+            "cycle_count":  _auto_state["cycle_count"],
+            "processed":    len(_auto_state["processed_ids"]),
+            "last_results": _auto_state["last_results"],
+        })
+
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    # Start the background scheduler automatically when the server boots.
+    # It will check for unread emails immediately, then every 2 minutes.
+    start_auto_scheduler()
+    app.run(debug=True, port=5000, use_reloader=False)

@@ -390,54 +390,37 @@
     .av-6 { background: linear-gradient(135deg, #f97316, #eab308); }
     .av-7 { background: linear-gradient(135deg, #06b6d4, #6366f1); }
 
-    /* ── Automation toggle button ─────────────────────────────────────── */
-    .btn-automation {
+    /* ── Server-side auto status pill ────────────────────────────────────── */
+    .server-auto-pill {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 18px;
-      background: linear-gradient(135deg, rgba(91,138,245,0.15), rgba(167,139,250,0.12));
-      border: 1px solid rgba(91,138,245,0.4);
-      border-radius: 10px;
-      color: #93c5fd;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.82rem;
+      gap: 6px;
+      padding: 5px 12px;
+      background: rgba(52,211,153,0.08);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 100px;
+      font-size: 0.75rem;
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s;
-      margin-left: auto;
+      color: #34d399;
       white-space: nowrap;
-      position: relative;
+      cursor: default;
+      transition: all 0.3s;
     }
-    .btn-automation:hover {
-      background: linear-gradient(135deg, rgba(91,138,245,0.28), rgba(167,139,250,0.22));
-      border-color: rgba(91,138,245,0.65);
-      color: #fff;
-      box-shadow: 0 0 18px rgba(91,138,245,0.25);
+    .server-auto-pill.idle {
+      background: rgba(123,132,154,0.08);
+      border-color: rgba(123,132,154,0.2);
+      color: var(--text-muted);
     }
-    .btn-automation.running {
-      background: linear-gradient(135deg, rgba(248,113,113,0.15), rgba(251,146,60,0.12));
-      border-color: rgba(248,113,113,0.45);
-      color: #fca5a5;
-    }
-    .btn-automation.running:hover {
-      background: linear-gradient(135deg, rgba(248,113,113,0.28), rgba(251,146,60,0.22));
-      border-color: rgba(248,113,113,0.65);
-      color: #fff;
-      box-shadow: 0 0 18px rgba(248,113,113,0.25);
-    }
-    .btn-automation svg { width: 14px; height: 14px; }
-    /* Pulsing dot shown while automation is running */
-    .auto-pulse {
-      width: 8px; height: 8px;
+    .server-auto-dot {
+      width: 7px; height: 7px;
       border-radius: 50%;
-      background: #f87171;
-      animation: pulse-dot 1.2s ease-in-out infinite;
+      background: #34d399;
+      animation: pulse-dot 1.8s ease-in-out infinite;
       flex-shrink: 0;
     }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.4; transform: scale(0.65); }
+    .server-auto-pill.idle .server-auto-dot {
+      background: var(--text-dim);
+      animation: none;
     }
 
     /* ── Progress Drawer ──────────────────────────────────────────────────── */
@@ -670,13 +653,14 @@
       <h1 class="content-title" id="content-title">Unread</h1>
       <span class="content-count" id="content-count">{{ emails|length }} unread</span>
 
-      <!-- Automation toggle button -->
-      <button class="btn-automation" id="btn-automation" onclick="toggleAutomation()">
-        <svg id="auto-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"/>
-        </svg>
-        <span id="auto-btn-label">Start Automation</span>
-      </button>
+      <!-- Server-side auto-unsub status pill -->
+      <div class="server-auto-pill idle" id="server-auto-pill" title="Server-side background auto-unsubscribe status">
+        <span class="server-auto-dot"></span>
+        <span id="server-auto-label">Server Auto: checking…</span>
+      </div>
+
+      <!-- Automation toggle button (manual / override) -->
+
     </div>
 
     <div class="email-list" id="email-list">
@@ -867,149 +851,6 @@
   });
 
   // ── Automation (SSE) ─────────────────────────────────────────────────────
-  let activeSSE = null;
-  let automationRunning = false;
-
-  function openDrawer() {
-    document.getElementById('drawer-overlay').classList.add('active');
-    document.getElementById('unsub-drawer').classList.add('open');
-  }
-
-  function closeDrawer() {
-    document.getElementById('drawer-overlay').classList.remove('active');
-    document.getElementById('unsub-drawer').classList.remove('open');
-    // Closing the drawer does NOT stop the automation
-  }
-
-  function setAutomationButtonRunning(running) {
-    const btn = document.getElementById('btn-automation');
-    const icon = document.getElementById('auto-btn-icon');
-    const label = document.getElementById('auto-btn-label');
-
-    // Remove any existing pulse dot
-    const existingDot = btn.querySelector('.auto-pulse');
-    if (existingDot) existingDot.remove();
-
-    if (running) {
-      btn.classList.add('running');
-      // Switch icon to stop square
-      icon.innerHTML = '<rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" stroke="none"/>';
-      label.textContent = 'Stop Automation';
-      // Add pulsing dot
-      const dot = document.createElement('span');
-      dot.className = 'auto-pulse';
-      btn.insertBefore(dot, btn.firstChild);
-    } else {
-      btn.classList.remove('running');
-      // Switch icon back to play triangle
-      icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
-      label.textContent = 'Start Automation';
-    }
-  }
-
-  function toggleAutomation() {
-    if (automationRunning) {
-      stopAutomation();
-    } else {
-      startAutomation();
-    }
-  }
-
-  function stopAutomation() {
-    automationRunning = false;
-    if (activeSSE) { activeSSE.close(); activeSSE = null; }
-    setAutomationButtonRunning(false);
-    // Mark progress as stopped if drawer is open
-    const progressText = document.getElementById('drawer-progress-text');
-    if (progressText && progressText.textContent !== 'Complete!') {
-      progressText.textContent = 'Stopped.';
-    }
-  }
-
-  function startAutomation() {
-    automationRunning = true;
-    setAutomationButtonRunning(true);
-
-    // Fetch all current unread mail IDs from the backend
-    fetch('/api/unread-ids')
-      .then(r => r.json())
-      .then(data => {
-        if (!automationRunning) return;  // user stopped while fetching
-        const ids = data.ids || [];
-        if (!ids.length) {
-          // Inbox is clean — wait and check again
-          document.getElementById('drawer-progress-text').textContent = 'Inbox clean. Checking again in 2 mins…';
-          setTimeout(() => {
-            if (automationRunning) startAutomation();
-          }, 120000);
-          return;
-        }
-        runUnsubStream(ids);
-      })
-      .catch(err => {
-        // On network error, retry after delay instead of stopping
-        console.error('Failed to fetch unread IDs:', err);
-        if (automationRunning) {
-          setTimeout(() => {
-            if (automationRunning) startAutomation();
-          }, 120000);
-        }
-      });
-  }
-
-  function runUnsubStream(ids) {
-    // Reset drawer UI
-    document.getElementById('drawer-list').innerHTML = '';
-    document.getElementById('drawer-summary').style.display = 'none';
-    document.getElementById('progress-fill').style.width = '0%';
-    document.getElementById('drawer-progress-text').textContent = `Processing 0 of ${ids.length}`;
-    document.getElementById('drawer-progress-pct').textContent = '0%';
-
-    openDrawer();
-
-    // Start SSE stream
-    const url = `/api/unsubscribe/all?ids=${encodeURIComponent(ids.join(','))}`;
-    activeSSE = new EventSource(url);
-
-    activeSSE.onmessage = function(e) {
-      if (!automationRunning) {
-        activeSSE.close(); activeSSE = null;
-        return;
-      }
-      const data = JSON.parse(e.data);
-
-      if (data.type === 'processing') {
-        updateProgress(data.index, data.total);
-        addDrawerRow(data.msg_id, data.sender, data.subject, 'processing', '⏳', 'Processing…');
-
-      } else if (data.type === 'result') {
-        updateProgress(data.index + 1, data.total);
-        updateDrawerRow(data.msg_id, data.status, data);
-
-      } else if (data.type === 'done') {
-        activeSSE.close();
-        activeSSE = null;
-        showSummary(data);
-        document.getElementById('drawer-progress-text').textContent = 'Complete! Checking again in 2 mins…';
-        document.getElementById('drawer-progress-pct').textContent = '100%';
-        document.getElementById('progress-fill').style.width = '100%';
-        // Automation loops forever — poll again after 2 minutes
-        if (automationRunning) {
-          setTimeout(() => {
-            if (automationRunning) startAutomation();
-          }, 120000);
-        }
-      }
-    };
-
-    activeSSE.onerror = function() {
-      if (activeSSE) { activeSSE.close(); activeSSE = null; }
-      if (automationRunning) {
-        document.getElementById('drawer-progress-text').textContent = 'Connection error.';
-        stopAutomation();
-      }
-    };
-  }
 
   function updateProgress(done, total) {
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -1115,8 +956,80 @@
   }
   // Auto-start automation when page loads
   document.addEventListener('DOMContentLoaded', () => {
-    startAutomation();
+    // The server handles recurring auto-unsub every 2 minutes.
+    // Poll server status to keep the pill updated.
+    updateServerAutoStatus();
+    setInterval(updateServerAutoStatus, 15000);  // refresh every 15s
   });
+
+  // ── Server-side auto-unsub status pill ───────────────────────────────────
+  let _lastKnownCycle  = -1;   // detects when a cycle finishes with processed emails
+  let _reloadTimer     = null; // pending reload, keyed to next_run timestamp
+  let _scheduledForTime = null; // the next_run value we already scheduled for
+
+  function updateServerAutoStatus() {
+    fetch('/api/auto-status')
+      .then(r => r.json())
+      .then(data => {
+        const pill  = document.getElementById('server-auto-pill');
+        const label = document.getElementById('server-auto-label');
+        if (!pill || !label) return;
+
+        if (data.running) {
+          pill.classList.remove('idle');
+          const cyclesTxt = data.cycle_count > 0
+            ? ` · ${data.cycle_count} cycle${data.cycle_count !== 1 ? 's' : ''}`
+            : '';
+          const processedTxt = data.processed > 0
+            ? ` · ${data.processed} processed`
+            : '';
+          label.textContent = `Server Auto: ON${cyclesTxt}${processedTxt}`;
+
+          // Show time until next check
+          if (data.next_run) {
+            const secsLeft = Math.max(0, Math.round((new Date(data.next_run) - Date.now()) / 1000));
+            pill.title = secsLeft > 0 ? `Next inbox check in ${secsLeft}s` : 'Checking inbox now…';
+
+            // Schedule a reload to fire exactly when the next server cycle starts.
+            // This keeps the inbox in sync with the server's 2-min poll —
+            // new emails that arrive in Gmail will appear automatically.
+            if (data.next_run !== _scheduledForTime) {
+              _scheduledForTime = data.next_run;
+              if (_reloadTimer) clearTimeout(_reloadTimer);
+              const msUntilCycle = Math.max(0, new Date(data.next_run) - Date.now());
+              _reloadTimer = setTimeout(() => {
+                _reloadTimer = null;
+                location.reload();
+              }, msUntilCycle + 500); // +500ms buffer so server has started the cycle
+            }
+          }
+
+          // Also reload immediately when a cycle finishes having processed emails
+          if (_lastKnownCycle !== -1 &&
+              data.cycle_count > _lastKnownCycle &&
+              data.last_results && data.last_results.length > 0) {
+            // Cancel the scheduled cycle-aligned reload since we're reloading now
+            if (_reloadTimer) { clearTimeout(_reloadTimer); _reloadTimer = null; }
+            label.textContent = 'Cycle done — refreshing…';
+            setTimeout(() => location.reload(), 1200);
+          }
+        } else {
+          pill.classList.add('idle');
+          label.textContent = 'Server Auto: OFF';
+          pill.title = 'Background scheduler is not running';
+          // Cancel any pending reload if scheduler stopped
+          if (_reloadTimer) { clearTimeout(_reloadTimer); _reloadTimer = null; }
+        }
+
+        // Always update the tracker after reading the response
+        _lastKnownCycle = data.cycle_count;
+      })
+      .catch(() => {
+        // silently ignore — server may not be ready yet
+      });
+
+  }
+
 </script>
 </body>
 </html>
