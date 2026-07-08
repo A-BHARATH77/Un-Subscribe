@@ -79,83 +79,93 @@
     .header-logo .logo-icon svg { width: 18px; height: 18px; }
     .header-logo .logo-name { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
 
-    .search-bar {
-      flex: 1;
-      max-width: 600px;
-      margin: 0 auto;
-      position: relative;
-    }
-    .search-bar input {
-      width: 100%;
-      padding: 10px 18px 10px 44px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.88rem;
-      outline: none;
-      transition: all 0.2s;
-    }
-    .search-bar input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-      background: var(--surface2);
-    }
-    .search-bar input::placeholder { color: var(--text-dim); }
-    .search-bar .search-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-dim);
-      pointer-events: none;
-    }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 12px;
       margin-left: auto;
+      padding-right: 4px;
     }
 
-    .user-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px 6px 6px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      cursor: default;
+    /* ── Avatar dropdown ─────────────────────────────────────────────── */
+    .avatar-menu {
+      position: relative;
     }
-    .user-avatar {
-      width: 28px; height: 28px;
+    .avatar-btn {
+      width: 36px; height: 36px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       border-radius: 50%;
+      border: 2px solid transparent;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.7rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: #fff;
-      flex-shrink: 0;
-    }
-    .user-email { font-size: 0.78rem; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .btn-logout {
-      padding: 7px 14px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-muted);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.8rem;
       cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
+      transition: box-shadow 0.2s, border-color 0.2s;
+      outline: none;
     }
-    .btn-logout:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.07); }
+    .avatar-btn:hover, .avatar-btn:focus {
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .avatar-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 220px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+      padding: 8px;
+      z-index: 500;
+      animation: dropIn 0.18s ease;
+    }
+    @keyframes dropIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .avatar-dropdown.open { display: block; }
+    .dropdown-account {
+      padding: 10px 12px 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+    .dropdown-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .dropdown-email {
+      font-size: 0.82rem;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .dropdown-signout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--red);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .dropdown-signout:hover { background: rgba(248,113,113,0.1); }
+    .dropdown-signout svg { width: 14px; height: 14px; flex-shrink: 0; }
 
     /* === SIDEBAR === */
     .sidebar {
@@ -607,21 +617,24 @@
       <span class="logo-name">MailView</span>
     </div>
 
-    <div class="search-bar">
-      <span class="search-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </span>
-      <input type="text" id="search-input" placeholder="Search in mail…" autocomplete="off"/>
-    </div>
-
     <div class="header-right">
-      <div class="user-badge">
-        <div class="user-avatar" id="user-avatar-header">M</div>
-        <span class="user-email">{{ user_email }}</span>
+      <div class="avatar-menu" id="avatar-menu">
+        <button class="avatar-btn" id="avatar-btn" onclick="toggleAvatarMenu()" aria-haspopup="true" aria-expanded="false">M</button>
+        <div class="avatar-dropdown" id="avatar-dropdown" role="menu">
+          <div class="dropdown-account">
+            <div class="dropdown-label">Signed in as</div>
+            <div class="dropdown-email" id="dropdown-email-text">{{ user_email }}</div>
+          </div>
+          <a href="/logout" class="dropdown-signout" id="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign out
+          </a>
+        </div>
       </div>
-      <a href="/logout" class="btn-logout" id="logout-btn">Sign out</a>
     </div>
   </header>
 
@@ -639,12 +652,6 @@
       {% endif %}
     </button>
 
-    <button class="nav-item" id="nav-starred" onclick="loadLabel('STARRED')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-      Starred
-    </button>
   </aside>
 
   <!-- Main Content -->
@@ -746,11 +753,27 @@
 </div>
 
 <script>
-  // Set user avatar initial
-  const emailAddr = document.querySelector('.user-email')?.textContent || '';
+  // Set avatar initial from email
+  const emailAddr = '{{ user_email }}';
   const initial = emailAddr.charAt(0).toUpperCase();
-  const avatarEl = document.getElementById('user-avatar-header');
-  if (avatarEl) avatarEl.textContent = initial;
+  const avatarBtn = document.getElementById('avatar-btn');
+  if (avatarBtn) avatarBtn.textContent = initial;
+
+  // Avatar dropdown toggle
+  function toggleAvatarMenu() {
+    const dd = document.getElementById('avatar-dropdown');
+    const btn = document.getElementById('avatar-btn');
+    const open = dd.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open);
+  }
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const menu = document.getElementById('avatar-menu');
+    if (menu && !menu.contains(e.target)) {
+      document.getElementById('avatar-dropdown')?.classList.remove('open');
+      document.getElementById('avatar-btn')?.setAttribute('aria-expanded', 'false');
+    }
+  });
 
   // Label navigation
   const navItems = document.querySelectorAll('.nav-item');
@@ -829,26 +852,8 @@
       .catch(() => renderEmails([], title));
   }
 
-  // Search
-  let searchTimer;
-  document.getElementById('search-input').addEventListener('input', function() {
-    clearTimeout(searchTimer);
-    const q = this.value.trim();
-    searchTimer = setTimeout(() => {
-      if (q.length > 1) {
-        showLoading();
-        document.getElementById('content-title').textContent = `Results for "${q}"`;
-        fetch(`/api/emails?q=${encodeURIComponent(q)}&label=`)
-          .then(r => r.json())
-          .then(data => renderEmails(data, `Results for "${q}"`))
-          .catch(() => renderEmails([], 'Search'));
-      } else if (q.length === 0) {
-        loadLabel('INBOX');
-        navItems.forEach(n => n.classList.remove('active'));
-        document.getElementById('nav-inbox')?.classList.add('active');
-      }
-    }, 400);
-  });
+
+
 
   // ── Automation (SSE) ─────────────────────────────────────────────────────
 
@@ -959,13 +964,49 @@
     // The server handles recurring auto-unsub every 2 minutes.
     // Poll server status to keep the pill updated.
     updateServerAutoStatus();
-    setInterval(updateServerAutoStatus, 15000);  // refresh every 15s
+    setInterval(updateServerAutoStatus, 15000);  // poll status every 15s
   });
 
-  // ── Server-side auto-unsub status pill ───────────────────────────────────
-  let _lastKnownCycle  = -1;   // detects when a cycle finishes with processed emails
-  let _reloadTimer     = null; // pending reload, keyed to next_run timestamp
-  let _scheduledForTime = null; // the next_run value we already scheduled for
+  // ── Silent inbox refresh (AJAX, no page reload) ────────────────────────────
+  // Fetches the latest unread emails and re-renders the list in place.
+  // Safe to call at any time — won't cause cascades.
+  let _refreshing = false;
+  function fetchAndRefreshInbox() {
+    if (_refreshing) return;
+    _refreshing = true;
+    fetch('/api/emails?label=INBOX&q=is:unread')
+      .then(r => r.json())
+      .then(emails => {
+        renderEmails(emails, 'Unread');
+        // Update the count badge in the sidebar
+        const badge = document.querySelector('#nav-inbox .nav-badge');
+        const count = emails.length;
+        if (count > 0) {
+          if (badge) { badge.textContent = count; }
+          else {
+            const btn = document.getElementById('nav-inbox');
+            if (btn) {
+              const b = document.createElement('span');
+              b.className = 'nav-badge';
+              b.textContent = count;
+              btn.appendChild(b);
+            }
+          }
+        } else {
+          if (badge) badge.remove();
+        }
+        // Update count text next to title
+        const countEl = document.getElementById('content-count');
+        if (countEl) countEl.textContent = `${count} unread`;
+      })
+      .catch(() => {}) // silently ignore network errors
+      .finally(() => { _refreshing = false; });
+  }
+
+  // ── Server-side auto-unsub status pill ────────────────────────────────────
+  let _lastKnownCycle   = -1;    // tracks the last cycle we've seen
+  let _nextRefreshTimer = null;  // timer scheduled to refresh at next_run time
+  let _scheduledForRun  = null;  // which next_run value the timer is set for
 
   function updateServerAutoStatus() {
     fetch('/api/auto-status')
@@ -977,58 +1018,59 @@
 
         if (data.running) {
           pill.classList.remove('idle');
-          const cyclesTxt = data.cycle_count > 0
-            ? ` · ${data.cycle_count} cycle${data.cycle_count !== 1 ? 's' : ''}`
-            : '';
-          const processedTxt = data.processed > 0
-            ? ` · ${data.processed} processed`
-            : '';
+          const cyclesTxt     = data.cycle_count > 0
+            ? ` · ${data.cycle_count} cycle${data.cycle_count !== 1 ? 's' : ''}` : '';
+          const processedTxt  = data.processed > 0
+            ? ` · ${data.processed} processed` : '';
           label.textContent = `Server Auto: ON${cyclesTxt}${processedTxt}`;
 
-          // Show time until next check
+          // Show countdown to next cycle in tooltip
           if (data.next_run) {
             const secsLeft = Math.max(0, Math.round((new Date(data.next_run) - Date.now()) / 1000));
-            pill.title = secsLeft > 0 ? `Next inbox check in ${secsLeft}s` : 'Checking inbox now…';
+            pill.title = secsLeft > 0
+              ? `Next inbox check in ${secsLeft}s`
+              : 'Checking inbox now…';
 
-            // Schedule a reload to fire exactly when the next server cycle starts.
-            // This keeps the inbox in sync with the server's 2-min poll —
-            // new emails that arrive in Gmail will appear automatically.
-            if (data.next_run !== _scheduledForTime) {
-              _scheduledForTime = data.next_run;
-              if (_reloadTimer) clearTimeout(_reloadTimer);
-              const msUntilCycle = Math.max(0, new Date(data.next_run) - Date.now());
-              _reloadTimer = setTimeout(() => {
-                _reloadTimer = null;
-                location.reload();
-              }, msUntilCycle + 500); // +500ms buffer so server has started the cycle
+            // Schedule ONE silent refresh timed to the server's next cycle.
+            // Using next_run as a key ensures we only schedule once per cycle,
+            // even as this function is called every 15s.
+            if (data.next_run !== _scheduledForRun) {
+              _scheduledForRun = data.next_run;
+              if (_nextRefreshTimer) clearTimeout(_nextRefreshTimer);
+              const msUntil = Math.max(0, new Date(data.next_run) - Date.now());
+              _nextRefreshTimer = setTimeout(() => {
+                _nextRefreshTimer = null;
+                fetchAndRefreshInbox();   // ← AJAX refresh, not page reload
+              }, msUntil + 1000);         // +1s so server has started its cycle
             }
           }
 
-          // Also reload immediately when a cycle finishes having processed emails
+          // If a cycle just finished AND it processed emails → refresh now too
           if (_lastKnownCycle !== -1 &&
               data.cycle_count > _lastKnownCycle &&
               data.last_results && data.last_results.length > 0) {
-            // Cancel the scheduled cycle-aligned reload since we're reloading now
-            if (_reloadTimer) { clearTimeout(_reloadTimer); _reloadTimer = null; }
-            label.textContent = 'Cycle done — refreshing…';
-            setTimeout(() => location.reload(), 1200);
+            label.textContent = 'Cycle done — refreshing inbox…';
+            fetchAndRefreshInbox();       // ← AJAX refresh, not page reload
+            // Reset label after a moment
+            setTimeout(() => {
+              label.textContent = `Server Auto: ON${cyclesTxt}${processedTxt}`;
+            }, 3000);
           }
+
         } else {
           pill.classList.add('idle');
           label.textContent = 'Server Auto: OFF';
           pill.title = 'Background scheduler is not running';
-          // Cancel any pending reload if scheduler stopped
-          if (_reloadTimer) { clearTimeout(_reloadTimer); _reloadTimer = null; }
+          if (_nextRefreshTimer) { clearTimeout(_nextRefreshTimer); _nextRefreshTimer = null; }
         }
 
-        // Always update the tracker after reading the response
         _lastKnownCycle = data.cycle_count;
       })
       .catch(() => {
         // silently ignore — server may not be ready yet
       });
-
   }
+
 
 </script>
 </body>
