@@ -8,14 +8,33 @@ import logging
 import threading
 import time
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from flask import Flask, redirect, url_for, session, request, render_template, jsonify, Response, stream_with_context
+from flask import Flask, redirect, url_for, session, request, jsonify, Response, stream_with_context
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 import unsubscribe_engine
+import requests as http_requests
+
+def _load_env_file(path: str) -> None:
+    """Parse a .env file and inject keys into os.environ (stdlib only, no dotenv needed)."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except FileNotFoundError:
+        pass  # no .env file — rely on shell env vars
+
+_load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -27,6 +46,12 @@ logger = logging.getLogger(__name__)
 logging.getLogger("unsubscribe_engine").setLevel(logging.INFO)
 
 app = Flask(__name__)
+
+# ── Supabase config ───────────────────────────────────────────────────────────
+# Read from environment (set in .env or shell). The publishable key is safe to
+# use server-side for inserting rows via the REST API.
+SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.environ.get("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "")
 
 # ── Persistent secret key ────────────────────────────────────────────────────
 # On Render: set FLASK_SECRET_KEY env var (disk is ephemeral).
@@ -237,10 +262,13 @@ def get_sender_initials(name):
 
 @app.route("/")
 def index():
-    # If token is already saved on disk, skip login entirely
-    if "credentials" in session or load_token():
-        return redirect(url_for("inbox"))
-    return render_template("index.html")
+    """Health-check / status endpoint. The UI is served by the Next.js frontend."""
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    return jsonify({
+        "status": "ok",
+        "message": "UnSub API server is running. UI is at the frontend URL.",
+        "frontend": frontend_url,
+    })
 
 
 @app.route("/authorize")
@@ -294,92 +322,56 @@ def oauth2callback():
     creds_dict = credentials_to_dict(creds)
     session["credentials"] = creds_dict
     save_token(creds_dict)
-    return redirect(url_for("inbox"))
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    return redirect(f"{frontend_url}/inbox")
 
 
-@app.route("/inbox")
-def inbox():
+
+
+@app.route("/api/email/<msg_id>")
+def api_get_email(msg_id):
+    """JSON endpoint: return full email data for the frontend detail page."""
     service = get_gmail_service()
     if service is None:
-        return redirect(url_for("index"))
+        return jsonify({"error": "Not authenticated"}), 401
 
-    # Fetch user profile
-    profile = service.users().getProfile(userId="me").execute()
-    user_email = profile.get("emailAddress", "")
-
-    # Fetch only UNREAD inbox emails (50 latest)
-    result = service.users().messages().list(
-        userId="me", labelIds=["INBOX", "UNREAD"], maxResults=50
-    ).execute()
-    messages = result.get("messages", [])
-
-    emails = []
-    for msg in messages:
+    try:
         msg_data = service.users().messages().get(
-            userId="me", id=msg["id"], format="metadata",
-            metadataHeaders=["From", "Subject", "Date"]
+            userId="me", id=msg_id, format="full"
         ).execute()
         headers = parse_headers(msg_data.get("payload", {}).get("headers", []))
-        snippet = msg_data.get("snippet", "")
+        body = decode_body(msg_data.get("payload", {}))
         label_ids = msg_data.get("labelIds", [])
         is_unread = "UNREAD" in label_ids
         is_starred = "STARRED" in label_ids
+
+        # Mark as read
+        if is_unread:
+            service.users().messages().modify(
+                userId="me",
+                id=msg_id,
+                body={"removeLabelIds": ["UNREAD"]}
+            ).execute()
+
         sender_name = get_sender_name(headers.get("from", ""))
-        emails.append({
-            "id": msg["id"],
+        profile = service.users().getProfile(userId="me").execute()
+        user_email = profile.get("emailAddress", "")
+
+        return jsonify({
+            "id": msg_id,
             "from": headers.get("from", ""),
             "sender_name": sender_name,
             "initials": get_sender_initials(sender_name),
+            "to": headers.get("to", ""),
+            "cc": headers.get("cc", ""),
             "subject": headers.get("subject", "(no subject)"),
-            "date": format_date(headers.get("date", "")),
-            "snippet": snippet,
-            "is_unread": is_unread,
+            "date": headers.get("date", ""),
+            "body": body,
             "is_starred": is_starred,
+            "user_email": user_email,
         })
-
-    return render_template("inbox.html", emails=emails, user_email=user_email)
-
-
-@app.route("/email/<msg_id>")
-def view_email(msg_id):
-    service = get_gmail_service()
-    if service is None:
-        return redirect(url_for("index"))
-
-    msg_data = service.users().messages().get(
-        userId="me", id=msg_id, format="full"
-    ).execute()
-    headers = parse_headers(msg_data.get("payload", {}).get("headers", []))
-    body = decode_body(msg_data.get("payload", {}))
-    label_ids = msg_data.get("labelIds", [])
-    is_unread = "UNREAD" in label_ids
-    is_starred = "STARRED" in label_ids
-
-    # Mark as read — remove the UNREAD label so it disappears from inbox
-    if is_unread:
-        service.users().messages().modify(
-            userId="me",
-            id=msg_id,
-            body={"removeLabelIds": ["UNREAD"]}
-        ).execute()
-
-    sender_name = get_sender_name(headers.get("from", ""))
-
-    email = {
-        "id": msg_id,
-        "from": headers.get("from", ""),
-        "sender_name": sender_name,
-        "initials": get_sender_initials(sender_name),
-        "to": headers.get("to", ""),
-        "cc": headers.get("cc", ""),
-        "subject": headers.get("subject", "(no subject)"),
-        "date": headers.get("date", ""),
-        "body": body,
-        "is_starred": is_starred,
-    }
-    profile = service.users().getProfile(userId="me").execute()
-    user_email = profile.get("emailAddress", "")
-    return render_template("email.html", email=email, user_email=user_email)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/api/unread-ids")
@@ -396,6 +388,25 @@ def api_unread_ids():
         return jsonify({"ids": ids})
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/me")
+def api_me():
+    """Return the authenticated user's profile (email + initials)."""
+    service = get_gmail_service()
+    if service is None:
+        return jsonify({"error": "Not authenticated"}), 401
+    try:
+        profile = service.users().getProfile(userId="me").execute()
+        email = profile.get("emailAddress", "")
+        name = get_sender_name(email)
+        return jsonify({
+            "email": email,
+            "initials": get_sender_initials(name),
+        })
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
 
 
 @app.route("/api/emails")
@@ -482,77 +493,94 @@ def _get_user_email(service) -> str:
         return ""
 
 
-def _send_result_reply(service, msg_id: str, result: dict) -> bool:
+def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
     """
-    Reply to the original email's sender with the unsubscribe outcome.
-    Only fires on a successful unsubscribe.
-    Returns True if the reply was sent successfully.
+    Store the unsubscribe result in Supabase.
+    Inserts a row with: sender_email, sender_name, result (status), created_at.
+    Fires regardless of success/failure status so every processed email is logged.
+    Returns True if the insert succeeded.
     """
-    if result.get("status") != "success":
-        return False  # only reply on success
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        logger.warning("[DB] Supabase URL or key not configured — skipping DB store.")
+        return False
 
     try:
-        # Fetch the original email's headers for threading
-        meta = service.users().messages().get(
-            userId="me", id=msg_id, format="metadata",
-            metadataHeaders=["From", "Subject", "Message-ID", "Reply-To"]
+        # Fetch full email so we can check the body for forwarded messages
+        msg_data = service.users().messages().get(
+            userId="me", id=msg_id, format="full"
         ).execute()
+        
+        payload_data = msg_data.get("payload", {})
 
-        headers = {h["name"].lower(): h["value"]
-                   for h in meta.get("payload", {}).get("headers", [])}
+        from_raw = ""
+        to_raw = ""
+        # 1. Fallback to normal headers first
+        for h in payload_data.get("headers", []):
+            if h["name"].lower() == "from":
+                from_raw = h["value"]
+            elif h["name"].lower() == "to":
+                to_raw = h["value"]
+                
+        # 2. Check if it's a forwarded message by looking at the email body
+        try:
+            from bs4 import BeautifulSoup
+            html_content = decode_body(payload_data)
+            text_content = BeautifulSoup(html_content, "html.parser").get_text(separator="\n")
 
-        from_addr   = headers.get("from", "")
-        subject     = headers.get("subject", "(no subject)")
-        message_id  = headers.get("message-id", "")
-        reply_to    = headers.get("reply-to", from_addr)
+            # Match the forwarded "From:" line — e.g. "From: Adam House <houseofbricks@substack.com>"
+            fwd_from_match = re.search(r"From:\s*(.+?)\r?\n", text_content, re.IGNORECASE)
+            if fwd_from_match:
+                from_raw = fwd_from_match.group(1).strip()
 
-        # Extract the bare email address from "Name <email@domain>"
-        match = re.search(r"<([^>]+)>", reply_to)
-        to_email = match.group(1).strip() if match else reply_to.strip()
+            # Match the forwarded "To:" line — e.g. "To: <bkalai2328@gmail.com>" or "To: someone@example.com"
+            fwd_to_match = re.search(r"To:\s*(.+?)\r?\n", text_content, re.IGNORECASE)
+            if fwd_to_match:
+                to_raw = fwd_to_match.group(1).strip()
+        except Exception as e:
+            logger.warning("[DB] Failed to parse forwarded body: %s", e)
 
-        if not to_email or "@" not in to_email:
-            logger.warning("Cannot send reply for msg %s: no valid To address", msg_id)
+        from email.utils import parseaddr
+
+        # organization_name  ← display name from the forwarded From: line
+        #   e.g. "Adam House <houseofbricks@substack.com>" → org_name = "Adam House"
+        org_name, _from_email = parseaddr(from_raw)
+        # If parseaddr couldn't find a display name, fall back to the raw string
+        if not org_name:
+            org_name = from_raw
+
+        # sender_email ← the email address from the forwarded To: line
+        #   e.g. "<bkalai2328@gmail.com>" → to_email = "bkalai2328@gmail.com"
+        _to_name, to_email = parseaddr(to_raw)
+        # Strip any stray angle brackets in case parseaddr missed them
+        to_email = to_email.strip("<>").strip()
+
+        payload = {
+            "organization_name": org_name,
+            "sender_email":      to_email,
+            "result":            result.get("status", "error"),
+            "created_at":        datetime.utcnow().isoformat() + "Z",
+        }
+
+        resp = http_requests.post(
+            f"{SUPABASE_URL}/rest/v1/unsubscribe_logs",
+            json=payload,
+            headers={
+                "apikey":        SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type":  "application/json",
+                "Prefer":        "return=minimal",
+            },
+            timeout=10,
+        )
+        if resp.status_code in (200, 201):
+            logger.info("[DB] Stored result — org=%s to=%s (%s)", org_name, to_email, result.get("status"))
+            return True
+        else:
+            logger.warning("[DB] Insert failed %s: %s", resp.status_code, resp.text)
             return False
 
-        method  = result.get("method") or "automated"
-        reason  = result.get("reason") or ""
-
-        body = (
-            f"Hi,\n\n"
-            f"This is an automated notification from the UnSub tool.\n\n"
-            f"I have successfully processed the unsubscribe request for this email address.\n\n"
-            f"Details:\n"
-            f"  Status : Successfully unsubscribed\n"
-            f"  Method : {method}\n"
-            f"  Note   : {reason}\n\n"
-            f"Please ensure my email address is permanently removed from all your "
-            f"mailing lists and distribution groups.\n\n"
-            f"Thank you,\n"
-            f"UnSub Automation"
-        )
-
-        reply_subject = subject if subject.lower().startswith("re:") else f"Re: {subject}"
-
-        msg = MIMEMultipart("alternative")
-        msg["To"]         = to_email
-        msg["Subject"]    = reply_subject
-        if message_id:
-            msg["In-Reply-To"] = message_id
-            msg["References"]  = message_id
-
-        msg.attach(MIMEText(body, "plain"))
-
-        raw_bytes = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-        service.users().messages().send(
-            userId="me",
-            body={"raw": raw_bytes, "threadId": meta.get("threadId", "")}
-        ).execute()
-
-        logger.info("Reply sent to %s for msg %s", to_email, msg_id)
-        return True
-
     except Exception as exc:
-        logger.warning("Could not send reply for msg %s: %s", msg_id, exc)
+        logger.warning("[DB] Could not store result for msg %s: %s", msg_id, exc)
         return False
 
 @app.route("/api/unsubscribe/<msg_id>", methods=["POST"])
@@ -567,14 +595,14 @@ def api_unsubscribe_single(msg_id):
         user_email = _get_user_email(service)
         result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email)
 
-        # Mark as read and send reply on success
+        # Mark as read on success; always store the result in DB
         marked_read = False
-        reply_sent  = False
+        db_stored   = False
         if result.get("status") == "success":
             marked_read = _mark_as_read(service, msg_id)
-            reply_sent  = _send_result_reply(service, msg_id, result)
+        db_stored = _store_result_in_db(service, msg_id, result)
         result["marked_read"] = marked_read
-        result["reply_sent"]  = reply_sent
+        result["db_stored"]   = db_stored
 
         return jsonify(result)
     except Exception as exc:
@@ -649,18 +677,17 @@ def api_unsubscribe_all():
                     "reason": str(exc), "url": None, "error": str(exc)
                 }
 
-            # Tally + mark as read + reply on success
+            # Tally + mark as read + store result in DB
             s = result.get("status", "error")
             if s == "success":
                 success_count += 1
                 result["marked_read"] = _mark_as_read(service, msg_id)
-                result["reply_sent"]  = _send_result_reply(service, msg_id, result)
             else:
                 result["marked_read"] = False
-                result["reply_sent"]  = False
                 if s == "skipped":     skipped_count += 1
                 elif s == "not_found": not_found_count += 1
                 else:                  error_count += 1
+            result["db_stored"] = _store_result_in_db(service, msg_id, result)
 
             # Send result event
             result_event = json.dumps({
@@ -703,7 +730,8 @@ def logout():
         os.remove(TOKEN_FILE)
     if os.path.exists(SECRET_KEY_FILE):
         os.remove(SECRET_KEY_FILE)
-    return redirect(url_for("index"))
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    return redirect(frontend_url)
 
 
 # ── Server-side background auto-unsubscribe scheduler ────────────────────────
@@ -822,11 +850,9 @@ def _run_auto_cycle():
             result = {"status": "error", "method": None, "reason": str(exc), "url": None}
 
         # Always mark as read once we've attempted to process the email
-        # (prevents it reappearing as unread on the next cycle)
         _mark_as_read(service, msg_id)
-        # Only send a reply on successful unsubscribe
-        if result.get("status") == "success":
-            _send_result_reply(service, msg_id, result)
+        # Store the result in DB for every processed email
+        _store_result_in_db(service, msg_id, result)
 
         # Mark this ID as processed regardless of outcome so we don't retry endlessly
         with _auto_state_lock:

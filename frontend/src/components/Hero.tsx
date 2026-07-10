@@ -22,7 +22,7 @@ export default function Hero() {
 <div suppressHydrationWarning>How it Works</div>
 </div></a>
 </div>
-<a animation="hero-button" className="button-arrow w-inline-block" data-w-id="53498126-dd01-7a2b-d835-864e4ace85ed" href="#get-started" suppressHydrationWarning><div className="button-arrow_wrap" suppressHydrationWarning>
+<a animation="hero-button" className="button-arrow w-inline-block" data-w-id="53498126-dd01-7a2b-d835-864e4ace85ed" href="/sign-in" suppressHydrationWarning><div className="button-arrow_wrap" suppressHydrationWarning>
 <div className="button-arrow_text" suppressHydrationWarning>
 <div className="text_button" suppressHydrationWarning>Clean My Inbox</div>
 </div>
