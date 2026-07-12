@@ -147,10 +147,11 @@ function SignInContent() {
       position:relative; overflow:hidden;
     }
     .btn-google::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.15),transparent); opacity:0; transition:opacity .25s; }
-    .btn-google:hover::before { opacity:1; }
-    .btn-google:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(91,138,245,.5); }
-    .btn-google:active { transform:translateY(0); }
+    .btn-google:not(.disabled):hover::before { opacity:1; }
+    .btn-google:not(.disabled):hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(91,138,245,.5); }
+    .btn-google:not(.disabled):active { transform:translateY(0); }
     .btn-google svg { width:20px; height:20px; flex-shrink:0; }
+    .btn-google.disabled { opacity:0.42; cursor:not-allowed; pointer-events:none; filter:grayscale(0.3); }
 
     /* ── Google pill badge ── */
     .google-badge {
@@ -274,7 +275,9 @@ function SignInContent() {
                 )}
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="signup-name">Your name <span style={{color:'var(--text-muted)',fontWeight:400}}>(optional)</span></label>
+                  <label className="form-label" htmlFor="signup-name">
+                    Your name <span style={{color:'var(--error)',fontSize:'.8rem'}}>*</span>
+                  </label>
                   <input
                     id="signup-name"
                     type="text"
@@ -283,12 +286,21 @@ function SignInContent() {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     autoComplete="name"
+                    required
                     autoFocus
                   />
-                  <p className="form-hint">If provided, your name will be saved alongside your account.</p>
+                  <p className="form-hint">
+                    {name.trim() ? '✓ Looking good!' : 'Enter your name to continue.'}
+                  </p>
                 </div>
 
-                <a href={signupHref} className="btn-google" id="signup-btn">
+                <a
+                  href={name.trim() ? signupHref : undefined}
+                  className={`btn-google${name.trim() ? '' : ' disabled'}`}
+                  id="signup-btn"
+                  aria-disabled={!name.trim()}
+                  tabIndex={name.trim() ? 0 : -1}
+                >
                   {googleIcon}
                   Create Account &amp; Continue with Google
                 </a>

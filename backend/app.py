@@ -96,28 +96,87 @@ OAUTH_STATE_FILE = os.path.join(os.path.dirname(__file__), ".oauth_state.json")
 
 
 def save_token(creds_dict):
-    """Write token dict to disk and sync to TOKEN_JSON env var for Render."""
-    with open(TOKEN_FILE, "w") as f:
-        json.dump(creds_dict, f)
-    # Keep the env var in sync so other processes (e.g. background thread) see it
+    """Persist the admin OAuth token in three places for maximum durability:
+    1. TOKEN_JSON env var   — in-process fast access
+    2. token.json on disk   — local dev
+    3. Supabase DB          — survives cloud restarts (Render ephemeral FS)
+    """
+    # 1. In-process env var (immediately available in same process)
     os.environ["TOKEN_JSON"] = json.dumps(creds_dict)
+
+    # 2. Local file (local dev / non-ephemeral hosts)
+    try:
+        with open(TOKEN_FILE, "w") as f:
+            json.dump(creds_dict, f)
+    except Exception as exc:
+        logger.warning("[Token] Could not write token.json: %s", exc)
+
+    # 3. Supabase (survives ephemeral filesystem resets on Render etc.)
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            http_requests.post(
+                f"{SUPABASE_URL}/rest/v1/admin_tokens",
+                json={"id": 1, "token_data": creds_dict},
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "resolution=merge-duplicates",
+                },
+                timeout=8,
+            )
+            logger.info("[Token] Admin token saved to Supabase.")
+        except Exception as exc:
+            logger.warning("[Token] Could not save token to Supabase: %s", exc)
 
 
 def load_token():
     """
-    Read token dict. Priority:
-      1. TOKEN_JSON environment variable  (Render / ephemeral disk)
-      2. token.json file on disk          (local development)
+    Read the admin OAuth token. Priority:
+      1. TOKEN_JSON environment variable  (Render env var / same-process cache)
+      2. token.json file on disk          (local dev / non-ephemeral hosts)
+      3. Supabase admin_tokens table      (cloud persistence across restarts)
     """
+    # 1. In-process env var
     env_token = os.environ.get("TOKEN_JSON", "").strip()
     if env_token:
         try:
             return json.loads(env_token)
         except Exception:
             pass
+
+    # 2. Local file
     if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, "r") as f:
-            return json.load(f)
+        try:
+            with open(TOKEN_FILE, "r") as f:
+                data = json.load(f)
+            # Cache into env var for fast subsequent reads
+            os.environ["TOKEN_JSON"] = json.dumps(data)
+            return data
+        except Exception:
+            pass
+
+    # 3. Supabase fallback (primary persistence layer for cloud deployments)
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            resp = http_requests.get(
+                f"{SUPABASE_URL}/rest/v1/admin_tokens",
+                params={"id": "eq.1", "select": "token_data", "limit": "1"},
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                },
+                timeout=8,
+            )
+            if resp.status_code == 200 and resp.json():
+                data = resp.json()[0]["token_data"]
+                # Cache into env var so subsequent calls skip the DB
+                os.environ["TOKEN_JSON"] = json.dumps(data)
+                logger.info("[Token] Admin token loaded from Supabase.")
+                return data
+        except Exception as exc:
+            logger.warning("[Token] Could not load token from Supabase: %s", exc)
+
     return None
 
 
@@ -333,7 +392,8 @@ def oauth2callback():
     creds = flow.credentials
     creds_dict = credentials_to_dict(creds)
     session["credentials"] = creds_dict
-    save_token(creds_dict)
+    # NOTE: save_token() (which writes token.json for the scheduler) is called
+    # ONLY when the user is confirmed as admin — see the signin branch below.
 
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
@@ -350,6 +410,9 @@ def oauth2callback():
     if not user_email:
         # Couldn't get email — fall back to sign-in page with generic error
         return redirect(f"{frontend_url}/sign-in?error=profile_error")
+
+    # Store the email in session so subsequent API calls know who is logged in
+    session["user_email"] = user_email
 
     # ── Branch on mode ────────────────────────────────────────────────────────
     if mode == "signup":
@@ -401,7 +464,7 @@ def oauth2callback():
         except Exception as exc:
             logger.warning("[Auth] Could not insert new user: %s", exc)
 
-        return redirect(f"{frontend_url}/dashboard")
+        return redirect(f"{frontend_url}/dashboard?_e={user_email}")
 
     else:
         # ── SIGNIN: look up the user, redirect based on role ──────────────────
@@ -431,7 +494,15 @@ def oauth2callback():
                 return redirect(f"{frontend_url}/sign-in?error=no_account")
 
             role = rows[0].get("role", "user")
-            redirect_path = "/inbox" if role == "admin" else "/dashboard"
+            if role == "admin":
+                # Persist admin credentials to token.json so the background
+                # scheduler ALWAYS uses the admin inbox, never a regular user's.
+                save_token(creds_dict)
+                logger.info("[Auth] Admin token saved to token.json for scheduler.")
+                redirect_path = "/inbox"
+            else:
+                # Regular users: credentials live in session only — never touch token.json.
+                redirect_path = f"/dashboard?_e={user_email}"
             logger.info("[Auth] Sign-in OK — %s role=%s → %s", user_email, role, redirect_path)
             return redirect(f"{frontend_url}{redirect_path}")
 
@@ -440,6 +511,110 @@ def oauth2callback():
             return redirect(f"{frontend_url}/sign-in?error=profile_error")
 
 
+
+
+# ── Admin dashboard data endpoints ───────────────────────────────────────────
+
+@app.route("/api/admin/users")
+def api_admin_users():
+    """Return all rows from the users table for the admin dashboard."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify({"error": "Supabase not configured"}), 500
+    try:
+        resp = http_requests.get(
+            f"{SUPABASE_URL}/rest/v1/users",
+            params={"select": "id,email,name,role,created_at", "order": "created_at.desc"},
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return jsonify(resp.json())
+        return jsonify({"error": f"Supabase error {resp.status_code}: {resp.text}"}), 500
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/admin/logs")
+def api_admin_logs():
+    """Return rows from the unsubscribe_logs table for the admin dashboard."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify({"error": "Supabase not configured"}), 500
+    try:
+        resp = http_requests.get(
+            f"{SUPABASE_URL}/rest/v1/unsubscribe_logs",
+            params={"select": "*", "order": "created_at.desc", "limit": "200"},
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return jsonify(resp.json())
+        return jsonify({"error": f"Supabase error {resp.status_code}: {resp.text}"}), 500
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+# ── Per-user endpoints (for the user dashboard) ───────────────────────────────
+
+@app.route("/api/user/info")
+def api_user_info():
+    """Return the logged-in user's profile from the users table.
+    Email is resolved from Flask session first, then ?email= query param
+    (needed when the OAuth callback cookie is unavailable cross-port in dev).
+    """
+    email = session.get("user_email") or request.args.get("email", "").lower().strip()
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify({"email": email, "name": None, "role": "user"})
+    try:
+        resp = http_requests.get(
+            f"{SUPABASE_URL}/rest/v1/users",
+            params={"email": f"eq.{email}", "select": "email,name,role", "limit": "1"},
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=8,
+        )
+        if resp.status_code == 200 and resp.json():
+            row = resp.json()[0]
+            return jsonify({"email": row.get("email", email), "name": row.get("name"), "role": row.get("role", "user")})
+        # Email not in DB — treat as unauthenticated
+        return jsonify({"error": "Not authenticated"}), 401
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/user/logs")
+def api_user_logs():
+    """Return unsubscribe_logs rows where sender_email matches the logged-in user.
+    Email is resolved from Flask session first, then ?email= query param.
+    """
+    email = session.get("user_email") or request.args.get("email", "").lower().strip()
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify([])
+    try:
+        resp = http_requests.get(
+            f"{SUPABASE_URL}/rest/v1/unsubscribe_logs",
+            params={
+                "sender_email": f"eq.{email}",
+                "select": "organization_name,result,created_at",
+                "order": "created_at.desc",
+                "limit": "100",
+            },
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return jsonify(resp.json())
+        return jsonify({"error": f"Supabase {resp.status_code}: {resp.text}"}), 500
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/api/email/<msg_id>")
@@ -490,10 +665,12 @@ def api_get_email(msg_id):
 
 @app.route("/api/unread-ids")
 def api_unread_ids():
-    """Return a list of unread INBOX message IDs (lightweight, for automation)."""
-    service = get_gmail_service()
+    """Return a list of unread INBOX message IDs from the admin's inbox.
+    Always uses the saved admin token — independent of the logged-in session.
+    """
+    service = _build_service_from_token()
     if service is None:
-        return jsonify({"error": "Not authenticated"}), 401
+        return jsonify({"error": "Admin token not configured — please authorise the admin account first."}), 401
     try:
         result = service.users().messages().list(
             userId="me", labelIds=["INBOX", "UNREAD"], maxResults=50
@@ -761,15 +938,18 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
 
 @app.route("/api/unsubscribe/<msg_id>", methods=["POST"])
 def api_unsubscribe_single(msg_id):
-    """Unsubscribe from a single email by message ID."""
-    service = get_gmail_service()
+    """Unsubscribe from a single email by message ID.
+    Always operates on the admin's inbox via the saved token — independent of
+    the currently logged-in session.
+    """
+    service = _build_service_from_token()
     if service is None:
-        return jsonify({"error": "Not authenticated"}), 401
+        return jsonify({"error": "Admin token not configured — please authorise the admin account first."}), 401
 
     try:
         html_body, list_unsub = _get_email_full(service, msg_id)
-        user_email = _get_user_email(service)
-        result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email)
+        admin_email = _get_user_email(service)   # always the admin's address
+        result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email)
 
         # Mark as read on success; always store the result in DB
         marked_read = False
@@ -789,14 +969,16 @@ def api_unsubscribe_single(msg_id):
 def api_unsubscribe_all():
     """
     Server-Sent Events stream that processes all unread emails one by one.
+    Always operates on the admin's inbox via the saved token — independent of
+    the currently logged-in session.
     Query param: ids=id1,id2,id3,...
     Each SSE event is a JSON object:
       { index, total, msg_id, subject, sender, status, method, reason, url }
     A final event with type 'done' is sent when all are processed.
     """
-    service = get_gmail_service()
+    service = _build_service_from_token()
     if service is None:
-        return jsonify({"error": "Not authenticated"}), 401
+        return jsonify({"error": "Admin token not configured — please authorise the admin account first."}), 401
 
     raw_ids = request.args.get("ids", "")
     msg_ids = [i.strip() for i in raw_ids.split(",") if i.strip()]
@@ -811,8 +993,8 @@ def api_unsubscribe_all():
         not_found_count = 0
         error_count = 0
 
-        # Fetch user email once for Gemini fallback
-        user_email = _get_user_email(service)
+        # Always use the admin's email for the unsubscribe engine
+        admin_email = _get_user_email(service)
 
         for idx, msg_id in enumerate(msg_ids):
             # Fetch email metadata for display
@@ -846,7 +1028,7 @@ def api_unsubscribe_all():
             result = {"status": "error", "method": None, "reason": "Unknown", "url": None, "error": None}
             try:
                 html_body, list_unsub = _get_email_full(service, msg_id)
-                result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email)
+                result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email)
             except Exception as exc:
                 result = {
                     "status": "error", "method": None,

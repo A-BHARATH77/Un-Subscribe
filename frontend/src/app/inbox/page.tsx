@@ -292,7 +292,7 @@ export default function InboxPage() {
     .dropdown-signout svg { width: 14px; height: 14px; flex-shrink: 0; }
 
     .sidebar { background: var(--sidebar); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; cursor: pointer; transition: all 0.15s; color: var(--text-muted); font-size: 0.88rem; font-weight: 500; border: none; background: transparent; width: 100%; text-align: left; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; cursor: pointer; transition: all 0.15s; color: var(--text-muted); font-size: 0.88rem; font-weight: 500; border: none; background: transparent; width: 100%; text-align: left; text-decoration: none; }
     .nav-item:hover { background: var(--surface); color: var(--text); }
     .nav-item.active { background: var(--accent-soft); color: var(--accent); }
     .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; }
@@ -451,6 +451,14 @@ export default function InboxPage() {
               <span className="nav-badge">{emails.filter(e => e.is_unread && !removedIds.has(e.id)).length}</span>
             )}
           </button>
+
+          <a className="nav-item" id="nav-admin-dashboard" href="/admin-dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Admin Dashboard
+          </a>
         </aside>
 
         {/* Main Content */}
