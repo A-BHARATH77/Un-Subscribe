@@ -273,6 +273,11 @@ def index():
 
 @app.route("/authorize")
 def authorize():
+    # mode: "signin" (default) or "signup"
+    # name: optional display name for signup
+    mode = request.args.get("mode", "signin").strip()
+    name = request.args.get("name", "").strip()
+
     # Generate PKCE pair
     code_verifier = secrets.token_urlsafe(96)
     code_challenge = base64.urlsafe_b64encode(
@@ -286,19 +291,24 @@ def authorize():
     )
     authorization_url, state = flow.authorization_url(
         access_type="offline",
-        prompt="consent",
+        prompt="select_account",   # always show the account picker
         code_challenge=code_challenge,
         code_challenge_method="S256",
     )
-    # Persist state + verifier to disk — session cookies can be lost during redirect
+    # Persist state + verifier + mode + name to disk
     with open(OAUTH_STATE_FILE, "w") as f:
-        json.dump({"state": state, "code_verifier": code_verifier}, f)
+        json.dump({
+            "state": state,
+            "code_verifier": code_verifier,
+            "mode": mode,
+            "name": name,
+        }, f)
     return redirect(authorization_url)
 
 
 @app.route("/oauth2callback")
 def oauth2callback():
-    # Load state and verifier from the file we wrote in /authorize
+    # Load state, verifier, mode, and name from the file we wrote in /authorize
     oauth_data = {}
     if os.path.exists(OAUTH_STATE_FILE):
         with open(OAUTH_STATE_FILE, "r") as f:
@@ -307,6 +317,8 @@ def oauth2callback():
 
     state = oauth_data.get("state") or request.args.get("state")
     code_verifier = oauth_data.get("code_verifier")
+    mode = oauth_data.get("mode", "signin")   # "signin" or "signup"
+    name = oauth_data.get("name", "")
 
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
@@ -322,8 +334,110 @@ def oauth2callback():
     creds_dict = credentials_to_dict(creds)
     session["credentials"] = creds_dict
     save_token(creds_dict)
+
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
-    return redirect(f"{frontend_url}/inbox")
+
+    # ── Get the authenticated Gmail address from Google ───────────────────────
+    user_email = ""
+    try:
+        gmail_svc = get_gmail_service()
+        if gmail_svc:
+            profile = gmail_svc.users().getProfile(userId="me").execute()
+            user_email = profile.get("emailAddress", "").lower().strip()
+    except Exception as exc:
+        logger.warning("[Auth] Could not fetch Gmail profile: %s", exc)
+
+    if not user_email:
+        # Couldn't get email — fall back to sign-in page with generic error
+        return redirect(f"{frontend_url}/sign-in?error=profile_error")
+
+    # ── Branch on mode ────────────────────────────────────────────────────────
+    if mode == "signup":
+        # ── SIGNUP: create a new user row, then redirect to /dashboard ────────
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            logger.warning("[Auth] Supabase not configured for signup.")
+            return redirect(f"{frontend_url}/dashboard")  # graceful fallback
+
+        # Check if already exists
+        try:
+            check = http_requests.get(
+                f"{SUPABASE_URL}/rest/v1/users",
+                params={"email": f"eq.{user_email}", "select": "id"},
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                },
+                timeout=8,
+            )
+            if check.status_code == 200 and check.json():
+                # Already exists — redirect to sign-in with a helpful error
+                logger.info("[Auth] Signup attempted for existing user: %s", user_email)
+                return redirect(f"{frontend_url}/sign-in?error=already_exists")
+        except Exception as exc:
+            logger.warning("[Auth] Could not check user existence: %s", exc)
+
+        # Insert new user
+        try:
+            payload = {
+                "email": user_email,
+                "name": name or None,
+                "role": "user",
+            }
+            resp = http_requests.post(
+                f"{SUPABASE_URL}/rest/v1/users",
+                json=payload,
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal",
+                },
+                timeout=8,
+            )
+            if resp.status_code in (200, 201):
+                logger.info("[Auth] New user created via signup: %s", user_email)
+            else:
+                logger.warning("[Auth] Signup insert failed %s: %s", resp.status_code, resp.text)
+        except Exception as exc:
+            logger.warning("[Auth] Could not insert new user: %s", exc)
+
+        return redirect(f"{frontend_url}/dashboard")
+
+    else:
+        # ── SIGNIN: look up the user, redirect based on role ──────────────────
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            logger.warning("[Auth] Supabase not configured for signin.")
+            return redirect(f"{frontend_url}/sign-in?error=profile_error")
+
+        try:
+            resp = http_requests.get(
+                f"{SUPABASE_URL}/rest/v1/users",
+                params={"email": f"eq.{user_email}", "select": "role"},
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                },
+                timeout=8,
+            )
+            logger.info("[Auth] Supabase lookup status=%s body=%s", resp.status_code, resp.text[:300])
+
+            if resp.status_code != 200:
+                logger.warning("[Auth] Supabase returned %s for signin lookup.", resp.status_code)
+                return redirect(f"{frontend_url}/sign-in?error=profile_error")
+
+            rows = resp.json()
+            if not rows:
+                logger.info("[Auth] Sign-in rejected — no account for: %s", user_email)
+                return redirect(f"{frontend_url}/sign-in?error=no_account")
+
+            role = rows[0].get("role", "user")
+            redirect_path = "/inbox" if role == "admin" else "/dashboard"
+            logger.info("[Auth] Sign-in OK — %s role=%s → %s", user_email, role, redirect_path)
+            return redirect(f"{frontend_url}{redirect_path}")
+
+        except Exception as exc:
+            logger.warning("[Auth] Exception during signin lookup: %s", exc)
+            return redirect(f"{frontend_url}/sign-in?error=profile_error")
 
 
 
