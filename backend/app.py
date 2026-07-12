@@ -524,29 +524,91 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
         # 2. Check if it's a forwarded message by looking at the email body
         try:
             from bs4 import BeautifulSoup
+            from email.utils import parseaddr as _parseaddr
             html_content = decode_body(payload_data)
-            text_content = BeautifulSoup(html_content, "html.parser").get_text(separator="\n")
 
-            # Match the forwarded "From:" line — e.g. "From: Adam House <houseofbricks@substack.com>"
-            fwd_from_match = re.search(r"From:\s*(.+?)\r?\n", text_content, re.IGNORECASE)
+            # --- Extract forwarded From/To from the RAW HTML first ---
+            # BeautifulSoup.get_text() strips <email@example.com> as if it were
+            # an HTML tag, so we search the raw HTML source for the forwarded
+            # header lines BEFORE any HTML stripping takes place.
+            raw_fwd_match = re.search(
+                r"-{3,}\s*Forwarded message\s*-{3,}(.+?)(?:<br\s*/?>|\n){5,}",
+                html_content,
+                re.IGNORECASE | re.DOTALL,
+            )
+            raw_block = raw_fwd_match.group(1) if raw_fwd_match else html_content
+
+            # Strip inline HTML tags from the raw block (e.g. <b>, <span>)
+            # but preserve angle-bracketed email addresses by temporarily
+            # replacing < and > that wrap an email address.
+            import html as _html_mod
+            # Unescape HTML entities first (e.g. &lt; → <)
+            raw_block_unescaped = _html_mod.unescape(raw_block)
+
+            def _strip_html_tags(text):
+                """Remove HTML tags but preserve <email@address> patterns.
+                Block-level tags and <br> are converted to newlines first so
+                that From:/To: lines are properly terminated."""
+                # Convert line-break / block tags → newline so each header
+                # field ends up on its own line
+                text = re.sub(r"<br\s*/?>|</(?:p|div|tr|li|h[1-6]|blockquote)>",
+                              "\n", text, flags=re.IGNORECASE)
+                # Temporarily protect email addresses in angle brackets
+                protected = re.sub(
+                    r"<([^<>\s]+@[^<>\s]+)>",
+                    r"[\1]",
+                    text,
+                )
+                # Strip remaining HTML tags
+                clean = re.sub(r"<[^>]+>", "", protected)
+                # Restore protected email addresses
+                clean = re.sub(r"\[([^\[\]]+@[^\[\]]+)\]", r"<\1>", clean)
+                return clean
+
+            raw_block_clean = _strip_html_tags(raw_block_unescaped)
+
+            # Match "From: Priceline <email@deals.priceline.com>"
+            fwd_from_match = re.search(r"From:\s*(.+?)(?:\r?\n|$)", raw_block_clean, re.IGNORECASE)
             if fwd_from_match:
                 from_raw = fwd_from_match.group(1).strip()
 
-            # Match the forwarded "To:" line — e.g. "To: <bkalai2328@gmail.com>" or "To: someone@example.com"
-            fwd_to_match = re.search(r"To:\s*(.+?)\r?\n", text_content, re.IGNORECASE)
+            # Match "To: <bkalai2328@gmail.com>"
+            fwd_to_match = re.search(r"To:\s*(.+?)(?:\r?\n|$)", raw_block_clean, re.IGNORECASE)
             if fwd_to_match:
                 to_raw = fwd_to_match.group(1).strip()
+
+            # If we still didn't find To: in raw HTML, fall back to plain-text
+            # extraction (but use a regex that can capture bare email addresses too)
+            if not to_raw:
+                text_content = BeautifulSoup(html_content, "html.parser").get_text(separator="\n")
+                fwd_block_text = re.search(
+                    r"-{3,}\s*Forwarded message\s*-{3,}(.+)",
+                    text_content,
+                    re.IGNORECASE | re.DOTALL,
+                )
+                block = fwd_block_text.group(1) if fwd_block_text else text_content
+                fwd_to_text = re.search(
+                    r"To:\s*([\w._%+\-]+@[\w.\-]+\.[a-zA-Z]{2,})",
+                    block,
+                    re.IGNORECASE,
+                )
+                if fwd_to_text:
+                    to_raw = fwd_to_text.group(1).strip()
+
         except Exception as e:
             logger.warning("[DB] Failed to parse forwarded body: %s", e)
 
         from email.utils import parseaddr
 
-        # organization_name  ← display name from the forwarded From: line
-        #   e.g. "Adam House <houseofbricks@substack.com>" → org_name = "Adam House"
+        # organization_name ← display name from the forwarded From: line
+        #   e.g. "Priceline <email@deals.priceline.com>" → org_name = "Priceline"
         org_name, _from_email = parseaddr(from_raw)
-        # If parseaddr couldn't find a display name, fall back to the raw string
+        # If parseaddr couldn't find a display name, strip the email part and
+        # use whatever text remains (e.g. "Priceline" from "Priceline <email@...>")
         if not org_name:
-            org_name = from_raw
+            org_name = re.sub(r"\s*<[^>]+>", "", from_raw).strip() or from_raw.strip()
+        # Final guard: remove any trailing <email@...> that slipped through
+        org_name = re.sub(r"\s*<[^>]+@[^>]+>", "", org_name).strip()
 
         # sender_email ← the email address from the forwarded To: line
         #   e.g. "<bkalai2328@gmail.com>" → to_email = "bkalai2328@gmail.com"
