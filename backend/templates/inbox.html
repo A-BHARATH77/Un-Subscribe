@@ -79,83 +79,93 @@
     .header-logo .logo-icon svg { width: 18px; height: 18px; }
     .header-logo .logo-name { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
 
-    .search-bar {
-      flex: 1;
-      max-width: 600px;
-      margin: 0 auto;
-      position: relative;
-    }
-    .search-bar input {
-      width: 100%;
-      padding: 10px 18px 10px 44px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.88rem;
-      outline: none;
-      transition: all 0.2s;
-    }
-    .search-bar input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-      background: var(--surface2);
-    }
-    .search-bar input::placeholder { color: var(--text-dim); }
-    .search-bar .search-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-dim);
-      pointer-events: none;
-    }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 12px;
       margin-left: auto;
+      padding-right: 4px;
     }
 
-    .user-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px 6px 6px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      cursor: default;
+    /* ── Avatar dropdown ─────────────────────────────────────────────── */
+    .avatar-menu {
+      position: relative;
     }
-    .user-avatar {
-      width: 28px; height: 28px;
+    .avatar-btn {
+      width: 36px; height: 36px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       border-radius: 50%;
+      border: 2px solid transparent;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.7rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: #fff;
-      flex-shrink: 0;
-    }
-    .user-email { font-size: 0.78rem; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .btn-logout {
-      padding: 7px 14px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-muted);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.8rem;
       cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
+      transition: box-shadow 0.2s, border-color 0.2s;
+      outline: none;
     }
-    .btn-logout:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.07); }
+    .avatar-btn:hover, .avatar-btn:focus {
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .avatar-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      min-width: 220px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+      padding: 8px;
+      z-index: 500;
+      animation: dropIn 0.18s ease;
+    }
+    @keyframes dropIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .avatar-dropdown.open { display: block; }
+    .dropdown-account {
+      padding: 10px 12px 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+    .dropdown-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .dropdown-email {
+      font-size: 0.82rem;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .dropdown-signout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--red);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .dropdown-signout:hover { background: rgba(248,113,113,0.1); }
+    .dropdown-signout svg { width: 14px; height: 14px; flex-shrink: 0; }
 
     /* === SIDEBAR === */
     .sidebar {
@@ -390,54 +400,37 @@
     .av-6 { background: linear-gradient(135deg, #f97316, #eab308); }
     .av-7 { background: linear-gradient(135deg, #06b6d4, #6366f1); }
 
-    /* ── Automation toggle button ─────────────────────────────────────── */
-    .btn-automation {
+    /* ── Server-side auto status pill ────────────────────────────────────── */
+    .server-auto-pill {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 18px;
-      background: linear-gradient(135deg, rgba(91,138,245,0.15), rgba(167,139,250,0.12));
-      border: 1px solid rgba(91,138,245,0.4);
-      border-radius: 10px;
-      color: #93c5fd;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.82rem;
+      gap: 6px;
+      padding: 5px 12px;
+      background: rgba(52,211,153,0.08);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 100px;
+      font-size: 0.75rem;
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s;
-      margin-left: auto;
+      color: #34d399;
       white-space: nowrap;
-      position: relative;
+      cursor: default;
+      transition: all 0.3s;
     }
-    .btn-automation:hover {
-      background: linear-gradient(135deg, rgba(91,138,245,0.28), rgba(167,139,250,0.22));
-      border-color: rgba(91,138,245,0.65);
-      color: #fff;
-      box-shadow: 0 0 18px rgba(91,138,245,0.25);
+    .server-auto-pill.idle {
+      background: rgba(123,132,154,0.08);
+      border-color: rgba(123,132,154,0.2);
+      color: var(--text-muted);
     }
-    .btn-automation.running {
-      background: linear-gradient(135deg, rgba(248,113,113,0.15), rgba(251,146,60,0.12));
-      border-color: rgba(248,113,113,0.45);
-      color: #fca5a5;
-    }
-    .btn-automation.running:hover {
-      background: linear-gradient(135deg, rgba(248,113,113,0.28), rgba(251,146,60,0.22));
-      border-color: rgba(248,113,113,0.65);
-      color: #fff;
-      box-shadow: 0 0 18px rgba(248,113,113,0.25);
-    }
-    .btn-automation svg { width: 14px; height: 14px; }
-    /* Pulsing dot shown while automation is running */
-    .auto-pulse {
-      width: 8px; height: 8px;
+    .server-auto-dot {
+      width: 7px; height: 7px;
       border-radius: 50%;
-      background: #f87171;
-      animation: pulse-dot 1.2s ease-in-out infinite;
+      background: #34d399;
+      animation: pulse-dot 1.8s ease-in-out infinite;
       flex-shrink: 0;
     }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.4; transform: scale(0.65); }
+    .server-auto-pill.idle .server-auto-dot {
+      background: var(--text-dim);
+      animation: none;
     }
 
     /* ── Progress Drawer ──────────────────────────────────────────────────── */
@@ -624,21 +617,24 @@
       <span class="logo-name">MailView</span>
     </div>
 
-    <div class="search-bar">
-      <span class="search-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </span>
-      <input type="text" id="search-input" placeholder="Search in mail…" autocomplete="off"/>
-    </div>
-
     <div class="header-right">
-      <div class="user-badge">
-        <div class="user-avatar" id="user-avatar-header">M</div>
-        <span class="user-email">{{ user_email }}</span>
+      <div class="avatar-menu" id="avatar-menu">
+        <button class="avatar-btn" id="avatar-btn" onclick="toggleAvatarMenu()" aria-haspopup="true" aria-expanded="false">M</button>
+        <div class="avatar-dropdown" id="avatar-dropdown" role="menu">
+          <div class="dropdown-account">
+            <div class="dropdown-label">Signed in as</div>
+            <div class="dropdown-email" id="dropdown-email-text">{{ user_email }}</div>
+          </div>
+          <a href="/logout" class="dropdown-signout" id="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign out
+          </a>
+        </div>
       </div>
-      <a href="/logout" class="btn-logout" id="logout-btn">Sign out</a>
     </div>
   </header>
 
@@ -656,12 +652,6 @@
       {% endif %}
     </button>
 
-    <button class="nav-item" id="nav-starred" onclick="loadLabel('STARRED')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-      Starred
-    </button>
   </aside>
 
   <!-- Main Content -->
@@ -670,13 +660,14 @@
       <h1 class="content-title" id="content-title">Unread</h1>
       <span class="content-count" id="content-count">{{ emails|length }} unread</span>
 
-      <!-- Automation toggle button -->
-      <button class="btn-automation" id="btn-automation" onclick="toggleAutomation()">
-        <svg id="auto-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"/>
-        </svg>
-        <span id="auto-btn-label">Start Automation</span>
-      </button>
+      <!-- Server-side auto-unsub status pill -->
+      <div class="server-auto-pill idle" id="server-auto-pill" title="Server-side background auto-unsubscribe status">
+        <span class="server-auto-dot"></span>
+        <span id="server-auto-label">Server Auto: checking…</span>
+      </div>
+
+      <!-- Automation toggle button (manual / override) -->
+
     </div>
 
     <div class="email-list" id="email-list">
@@ -762,11 +753,27 @@
 </div>
 
 <script>
-  // Set user avatar initial
-  const emailAddr = document.querySelector('.user-email')?.textContent || '';
+  // Set avatar initial from email
+  const emailAddr = '{{ user_email }}';
   const initial = emailAddr.charAt(0).toUpperCase();
-  const avatarEl = document.getElementById('user-avatar-header');
-  if (avatarEl) avatarEl.textContent = initial;
+  const avatarBtn = document.getElementById('avatar-btn');
+  if (avatarBtn) avatarBtn.textContent = initial;
+
+  // Avatar dropdown toggle
+  function toggleAvatarMenu() {
+    const dd = document.getElementById('avatar-dropdown');
+    const btn = document.getElementById('avatar-btn');
+    const open = dd.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open);
+  }
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const menu = document.getElementById('avatar-menu');
+    if (menu && !menu.contains(e.target)) {
+      document.getElementById('avatar-dropdown')?.classList.remove('open');
+      document.getElementById('avatar-btn')?.setAttribute('aria-expanded', 'false');
+    }
+  });
 
   // Label navigation
   const navItems = document.querySelectorAll('.nav-item');
@@ -845,171 +852,10 @@
       .catch(() => renderEmails([], title));
   }
 
-  // Search
-  let searchTimer;
-  document.getElementById('search-input').addEventListener('input', function() {
-    clearTimeout(searchTimer);
-    const q = this.value.trim();
-    searchTimer = setTimeout(() => {
-      if (q.length > 1) {
-        showLoading();
-        document.getElementById('content-title').textContent = `Results for "${q}"`;
-        fetch(`/api/emails?q=${encodeURIComponent(q)}&label=`)
-          .then(r => r.json())
-          .then(data => renderEmails(data, `Results for "${q}"`))
-          .catch(() => renderEmails([], 'Search'));
-      } else if (q.length === 0) {
-        loadLabel('INBOX');
-        navItems.forEach(n => n.classList.remove('active'));
-        document.getElementById('nav-inbox')?.classList.add('active');
-      }
-    }, 400);
-  });
+
+
 
   // ── Automation (SSE) ─────────────────────────────────────────────────────
-  let activeSSE = null;
-  let automationRunning = false;
-
-  function openDrawer() {
-    document.getElementById('drawer-overlay').classList.add('active');
-    document.getElementById('unsub-drawer').classList.add('open');
-  }
-
-  function closeDrawer() {
-    document.getElementById('drawer-overlay').classList.remove('active');
-    document.getElementById('unsub-drawer').classList.remove('open');
-    // Closing the drawer does NOT stop the automation
-  }
-
-  function setAutomationButtonRunning(running) {
-    const btn = document.getElementById('btn-automation');
-    const icon = document.getElementById('auto-btn-icon');
-    const label = document.getElementById('auto-btn-label');
-
-    // Remove any existing pulse dot
-    const existingDot = btn.querySelector('.auto-pulse');
-    if (existingDot) existingDot.remove();
-
-    if (running) {
-      btn.classList.add('running');
-      // Switch icon to stop square
-      icon.innerHTML = '<rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" stroke="none"/>';
-      label.textContent = 'Stop Automation';
-      // Add pulsing dot
-      const dot = document.createElement('span');
-      dot.className = 'auto-pulse';
-      btn.insertBefore(dot, btn.firstChild);
-    } else {
-      btn.classList.remove('running');
-      // Switch icon back to play triangle
-      icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
-      label.textContent = 'Start Automation';
-    }
-  }
-
-  function toggleAutomation() {
-    if (automationRunning) {
-      stopAutomation();
-    } else {
-      startAutomation();
-    }
-  }
-
-  function stopAutomation() {
-    automationRunning = false;
-    if (activeSSE) { activeSSE.close(); activeSSE = null; }
-    setAutomationButtonRunning(false);
-    // Mark progress as stopped if drawer is open
-    const progressText = document.getElementById('drawer-progress-text');
-    if (progressText && progressText.textContent !== 'Complete!') {
-      progressText.textContent = 'Stopped.';
-    }
-  }
-
-  function startAutomation() {
-    automationRunning = true;
-    setAutomationButtonRunning(true);
-
-    // Fetch all current unread mail IDs from the backend
-    fetch('/api/unread-ids')
-      .then(r => r.json())
-      .then(data => {
-        if (!automationRunning) return;  // user stopped while fetching
-        const ids = data.ids || [];
-        if (!ids.length) {
-          // Inbox is clean — wait and check again
-          document.getElementById('drawer-progress-text').textContent = 'Inbox clean. Checking again in 2 mins…';
-          setTimeout(() => {
-            if (automationRunning) startAutomation();
-          }, 120000);
-          return;
-        }
-        runUnsubStream(ids);
-      })
-      .catch(err => {
-        // On network error, retry after delay instead of stopping
-        console.error('Failed to fetch unread IDs:', err);
-        if (automationRunning) {
-          setTimeout(() => {
-            if (automationRunning) startAutomation();
-          }, 120000);
-        }
-      });
-  }
-
-  function runUnsubStream(ids) {
-    // Reset drawer UI
-    document.getElementById('drawer-list').innerHTML = '';
-    document.getElementById('drawer-summary').style.display = 'none';
-    document.getElementById('progress-fill').style.width = '0%';
-    document.getElementById('drawer-progress-text').textContent = `Processing 0 of ${ids.length}`;
-    document.getElementById('drawer-progress-pct').textContent = '0%';
-
-    openDrawer();
-
-    // Start SSE stream
-    const url = `/api/unsubscribe/all?ids=${encodeURIComponent(ids.join(','))}`;
-    activeSSE = new EventSource(url);
-
-    activeSSE.onmessage = function(e) {
-      if (!automationRunning) {
-        activeSSE.close(); activeSSE = null;
-        return;
-      }
-      const data = JSON.parse(e.data);
-
-      if (data.type === 'processing') {
-        updateProgress(data.index, data.total);
-        addDrawerRow(data.msg_id, data.sender, data.subject, 'processing', '⏳', 'Processing…');
-
-      } else if (data.type === 'result') {
-        updateProgress(data.index + 1, data.total);
-        updateDrawerRow(data.msg_id, data.status, data);
-
-      } else if (data.type === 'done') {
-        activeSSE.close();
-        activeSSE = null;
-        showSummary(data);
-        document.getElementById('drawer-progress-text').textContent = 'Complete! Checking again in 2 mins…';
-        document.getElementById('drawer-progress-pct').textContent = '100%';
-        document.getElementById('progress-fill').style.width = '100%';
-        // Automation loops forever — poll again after 2 minutes
-        if (automationRunning) {
-          setTimeout(() => {
-            if (automationRunning) startAutomation();
-          }, 120000);
-        }
-      }
-    };
-
-    activeSSE.onerror = function() {
-      if (activeSSE) { activeSSE.close(); activeSSE = null; }
-      if (automationRunning) {
-        document.getElementById('drawer-progress-text').textContent = 'Connection error.';
-        stopAutomation();
-      }
-    };
-  }
 
   function updateProgress(done, total) {
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -1115,8 +961,117 @@
   }
   // Auto-start automation when page loads
   document.addEventListener('DOMContentLoaded', () => {
-    startAutomation();
+    // The server handles recurring auto-unsub every 2 minutes.
+    // Poll server status to keep the pill updated.
+    updateServerAutoStatus();
+    setInterval(updateServerAutoStatus, 15000);  // poll status every 15s
   });
+
+  // ── Silent inbox refresh (AJAX, no page reload) ────────────────────────────
+  // Fetches the latest unread emails and re-renders the list in place.
+  // Safe to call at any time — won't cause cascades.
+  let _refreshing = false;
+  function fetchAndRefreshInbox() {
+    if (_refreshing) return;
+    _refreshing = true;
+    fetch('/api/emails?label=INBOX&q=is:unread')
+      .then(r => r.json())
+      .then(emails => {
+        renderEmails(emails, 'Unread');
+        // Update the count badge in the sidebar
+        const badge = document.querySelector('#nav-inbox .nav-badge');
+        const count = emails.length;
+        if (count > 0) {
+          if (badge) { badge.textContent = count; }
+          else {
+            const btn = document.getElementById('nav-inbox');
+            if (btn) {
+              const b = document.createElement('span');
+              b.className = 'nav-badge';
+              b.textContent = count;
+              btn.appendChild(b);
+            }
+          }
+        } else {
+          if (badge) badge.remove();
+        }
+        // Update count text next to title
+        const countEl = document.getElementById('content-count');
+        if (countEl) countEl.textContent = `${count} unread`;
+      })
+      .catch(() => {}) // silently ignore network errors
+      .finally(() => { _refreshing = false; });
+  }
+
+  // ── Server-side auto-unsub status pill ────────────────────────────────────
+  let _lastKnownCycle   = -1;    // tracks the last cycle we've seen
+  let _nextRefreshTimer = null;  // timer scheduled to refresh at next_run time
+  let _scheduledForRun  = null;  // which next_run value the timer is set for
+
+  function updateServerAutoStatus() {
+    fetch('/api/auto-status')
+      .then(r => r.json())
+      .then(data => {
+        const pill  = document.getElementById('server-auto-pill');
+        const label = document.getElementById('server-auto-label');
+        if (!pill || !label) return;
+
+        if (data.running) {
+          pill.classList.remove('idle');
+          const cyclesTxt     = data.cycle_count > 0
+            ? ` · ${data.cycle_count} cycle${data.cycle_count !== 1 ? 's' : ''}` : '';
+          const processedTxt  = data.processed > 0
+            ? ` · ${data.processed} processed` : '';
+          label.textContent = `Server Auto: ON${cyclesTxt}${processedTxt}`;
+
+          // Show countdown to next cycle in tooltip
+          if (data.next_run) {
+            const secsLeft = Math.max(0, Math.round((new Date(data.next_run) - Date.now()) / 1000));
+            pill.title = secsLeft > 0
+              ? `Next inbox check in ${secsLeft}s`
+              : 'Checking inbox now…';
+
+            // Schedule ONE silent refresh timed to the server's next cycle.
+            // Using next_run as a key ensures we only schedule once per cycle,
+            // even as this function is called every 15s.
+            if (data.next_run !== _scheduledForRun) {
+              _scheduledForRun = data.next_run;
+              if (_nextRefreshTimer) clearTimeout(_nextRefreshTimer);
+              const msUntil = Math.max(0, new Date(data.next_run) - Date.now());
+              _nextRefreshTimer = setTimeout(() => {
+                _nextRefreshTimer = null;
+                fetchAndRefreshInbox();   // ← AJAX refresh, not page reload
+              }, msUntil + 1000);         // +1s so server has started its cycle
+            }
+          }
+
+          // If a cycle just finished AND it processed emails → refresh now too
+          if (_lastKnownCycle !== -1 &&
+              data.cycle_count > _lastKnownCycle &&
+              data.last_results && data.last_results.length > 0) {
+            label.textContent = 'Cycle done — refreshing inbox…';
+            fetchAndRefreshInbox();       // ← AJAX refresh, not page reload
+            // Reset label after a moment
+            setTimeout(() => {
+              label.textContent = `Server Auto: ON${cyclesTxt}${processedTxt}`;
+            }, 3000);
+          }
+
+        } else {
+          pill.classList.add('idle');
+          label.textContent = 'Server Auto: OFF';
+          pill.title = 'Background scheduler is not running';
+          if (_nextRefreshTimer) { clearTimeout(_nextRefreshTimer); _nextRefreshTimer = null; }
+        }
+
+        _lastKnownCycle = data.cycle_count;
+      })
+      .catch(() => {
+        // silently ignore — server may not be ready yet
+      });
+  }
+
+
 </script>
 </body>
 </html>
