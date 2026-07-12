@@ -397,7 +397,7 @@ def oauth2callback():
 
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
-    # ── Get the authenticated Gmail address from Google ───────────────────────
+    # ── Get the authenticated Gmail address from Google ─────────────────────
     user_email = ""
     try:
         gmail_svc = get_gmail_service()
