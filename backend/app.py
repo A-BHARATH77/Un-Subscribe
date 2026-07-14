@@ -397,7 +397,7 @@ def oauth2callback():
 
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
-    # ── Get the authenticated Gmail address from Google ───────────────────────
+    # ── Get the authenticated Gmail address from Google ─────────────────────
     user_email = ""
     try:
         gmail_svc = get_gmail_service()
@@ -892,14 +892,23 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
         from email.utils import parseaddr
 
         # organization_name ← display name from the forwarded From: line
-        #   e.g. "Priceline <email@deals.priceline.com>" → org_name = "Priceline"
-        org_name, _from_email = parseaddr(from_raw)
-        # If parseaddr couldn't find a display name, strip the email part and
-        # use whatever text remains (e.g. "Priceline" from "Priceline <email@...>")
+        org_name = from_raw
+        
+        # The string might be mangled (e.g. missing '<' like "Name email@domain.com>")
+        # Find the email address and take everything BEFORE it.
+        email_match = re.search(r"[\w\.\-\+]+@[\w\.\-]+\.[a-zA-Z]{2,}", org_name)
+        if email_match:
+            org_name = org_name[:email_match.start()].strip()
+            # Remove any trailing junk like '<' or '&lt;' that came just before the email
+            org_name = re.sub(r"(<|&lt;|\[|\()*\s*$", "", org_name, flags=re.IGNORECASE).strip()
+        else:
+            org_name = org_name.split('<')[0].strip()
+
         if not org_name:
-            org_name = re.sub(r"\s*<[^>]+>", "", from_raw).strip() or from_raw.strip()
-        # Final guard: remove any trailing <email@...> that slipped through
-        org_name = re.sub(r"\s*<[^>]+@[^>]+>", "", org_name).strip()
+            # Fallback if from_raw started with '<' or was just an email
+            org_name, _from_email = parseaddr(from_raw)
+            org_name = org_name or _from_email or from_raw.replace("<", "").replace(">", "").strip()
+
 
         # sender_email ← the email address from the forwarded To: line
         #   e.g. "<bkalai2328@gmail.com>" → to_email = "bkalai2328@gmail.com"
