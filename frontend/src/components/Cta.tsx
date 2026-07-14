@@ -29,22 +29,19 @@ export default function Cta() {
 </div>
 <div className="spacer-huge" suppressHydrationWarning></div>
 <h2 animation="right" className="text-color-on-primary" suppressHydrationWarning>
-                  We combine human <br/>insight with artificial intelligence
+                  We combine simple forwarding <br/>with automated cleanup
                 </h2>
 <div className="spacer-medium" suppressHydrationWarning></div>
 <div className="max-width-medium is-33rem" suppressHydrationWarning>
 <div animation="right" className="text-color-on-primary" suppressHydrationWarning>
-                    Our consulting team bridges strategic thinking and advanced
-                    AI technologies to help companies streamline processes,
-                    improve decision-making, and create intelligent digital
-                    experiences.
+                    Our automated system securely processes your forwarded emails and unsubscribes you permanently, so you can enjoy a clutter-free inbox.
                   </div>
 </div>
 <div className="spacer-huge" suppressHydrationWarning></div>
 <div className="button_wrapper" suppressHydrationWarning>
 <a animation="right" className="button-arrow w-inline-block" data-w-id="53498126-dd01-7a2b-d835-864e4ace85ed" href="/contact-us/contact-us-2" suppressHydrationWarning><div className="button-arrow_wrap" suppressHydrationWarning>
 <div className="button-arrow_text" suppressHydrationWarning>
-<div className="text_button" suppressHydrationWarning>Get Started</div>
+<div className="text_button" suppressHydrationWarning>Start Now</div>
 </div>
 <div className="button_container-arrow" suppressHydrationWarning>
 <svg className="icon-1x1-main" fill="none" viewBox="0 0 20 20" width="100%" xmlns="http://www.w3.org/2000/svg" suppressHydrationWarning>
