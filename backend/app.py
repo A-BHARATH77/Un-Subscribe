@@ -545,7 +545,7 @@ def api_admin_logs():
     try:
         resp = http_requests.get(
             f"{SUPABASE_URL}/rest/v1/unsubscribe_logs",
-            params={"select": "*", "order": "created_at.desc", "limit": "200"},
+            params={"select": "*", "order": "created_at.desc", "limit": "5000"},
             headers={
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -665,12 +665,10 @@ def api_get_email(msg_id):
 
 @app.route("/api/unread-ids")
 def api_unread_ids():
-    """Return a list of unread INBOX message IDs from the admin's inbox.
-    Always uses the saved admin token — independent of the logged-in session.
-    """
-    service = _build_service_from_token()
+    """Return a list of unread INBOX message IDs from the authenticated user's inbox."""
+    service = get_gmail_service()
     if service is None:
-        return jsonify({"error": "Admin token not configured — please authorise the admin account first."}), 401
+        return jsonify({"error": "Not authenticated"}), 401
     try:
         result = service.users().messages().list(
             userId="me", labelIds=["INBOX", "UNREAD"], maxResults=50
