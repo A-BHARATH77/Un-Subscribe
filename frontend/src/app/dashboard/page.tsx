@@ -520,6 +520,7 @@ function DashboardContent() {
   const [clockData, setClockData] = useState<any>(null);
   const [searchData, setSearchData] = useState<any>(null);
   const [checkMarkData, setCheckMarkData] = useState<any>(null);
+  const [chatBotData, setChatBotData] = useState<any>(null);
 
   // Fetch Lottie JSON
   useEffect(() => {
@@ -528,6 +529,7 @@ function DashboardContent() {
     fetch('/Clock%20analog%2024%20hours%20outline.json').then(r => r.json()).then(setClockData).catch(console.error);
     fetch('/Search.json').then(r => r.json()).then(setSearchData).catch(console.error);
     fetch('/TmL7dOCqfG.json').then(r => r.json()).then(setCheckMarkData).catch(console.error);
+    fetch('/Chat%20bot%20animation.json').then(r => r.json()).then(setChatBotData).catch(console.error);
   }, []);
 
   // GSAP Loader Animation
@@ -1541,10 +1543,8 @@ function DashboardContent() {
           {/* ── Top Nav ── */}
           <nav className="db-nav">
             <div className="db-nav-logo">
-              <div className="db-logo-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="4" width="20" height="16" rx="3"/><polyline points="2,4 12,13 22,4"/>
-                </svg>
+              <div className="db-logo-icon" style={{ background: 'transparent' }}>
+                <img src="/email.svg" alt="UnSub" style={{ width: '100%', height: '100%' }} />
               </div>
               UnSub
             </div>
@@ -1966,9 +1966,9 @@ function DashboardContent() {
             onClick={() => setIsPhoneOpen(!isPhoneOpen)}
           >
             {hasNewChat && <span className="db-phone-badge" />}
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isPhoneOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+            <div style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {chatBotData && <Lottie style={{ transform: 'scale(1.5)', transformOrigin: 'center' }} animationData={chatBotData} loop={true} autoplay={true} />}
+            </div>
           </button>
 
           <div className={`db-phone-overlay ${isPhoneOpen ? 'open' : ''}`}>
@@ -1981,17 +1981,19 @@ function DashboardContent() {
               </div>
 
               <div className="db-phone-header">
-                <button className="db-phone-close-btn" onClick={() => setIsPhoneOpen(false)}>
+                <div className="db-phone-avatar" style={{ background: 'transparent' }}>
+                  <img src="/email.svg" alt="Unsub Hero" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                </div>
+                <div>
+                  <div className="db-phone-title">Unsub Hero</div>
+                  <div className="db-phone-status">Online</div>
+                </div>
+                <button className="db-phone-close-btn" style={{ marginLeft: 'auto' }} onClick={() => setIsPhoneOpen(false)}>
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                 </button>
-                <div className="db-phone-avatar">US</div>
-                <div>
-                  <div className="db-phone-title">Unsub Hero</div>
-                  <div className="db-phone-status">Online</div>
-                </div>
               </div>
               
               <div className="db-phone-body">
