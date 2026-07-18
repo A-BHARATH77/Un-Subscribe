@@ -261,11 +261,11 @@ export default function EmailDetailPage() {
           </div>
 
           <div className="header-actions">
-            <a href="/inbox" className="btn-back" id="back-btn">
+            <a href="/admin-dashboard" className="btn-back" id="back-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6"/>
               </svg>
-              Back to Inbox
+              Back to Dashboard
             </a>
           </div>
 
@@ -280,12 +280,12 @@ export default function EmailDetailPage() {
 
         {/* Sidebar */}
         <aside className="sidebar">
-          <a className="nav-item active" href="/inbox">
+          <a className="nav-item active" href="/admin-dashboard">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
               <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
             </svg>
-            Inbox
+            Admin Dashboard
           </a>
         </aside>
 
@@ -340,11 +340,11 @@ export default function EmailDetailPage() {
 
                 {/* Actions */}
                 <div className="actions-bar">
-                  <button className="btn-action" onClick={() => router.push('/inbox')}>
+                  <button className="btn-action" onClick={() => router.push('/admin-dashboard')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
                     </svg>
-                    Back to Inbox
+                    Back to Dashboard
                   </button>
                   <button className="btn-action">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -499,7 +499,7 @@ def oauth2callback():
                 # scheduler ALWAYS uses the admin inbox, never a regular user's.
                 save_token(creds_dict)
                 logger.info("[Auth] Admin token saved to token.json for scheduler.")
-                redirect_path = "/inbox"
+                redirect_path = "/admin-dashboard"
             else:
                 # Regular users: credentials live in session only — never touch token.json.
                 redirect_path = f"/dashboard?_e={user_email}"
