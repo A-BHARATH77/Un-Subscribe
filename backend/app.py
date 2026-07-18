@@ -1174,7 +1174,6 @@ def _run_auto_cycle():
     if not new_ids:
         logger.info("[AutoUnsub] No new unread emails — inbox clean.")
         with _auto_state_lock:
-            _auto_state["last_results"] = []
             _auto_state["cycle_count"] += 1
             _auto_state["last_run"] = datetime.now().isoformat()
         return
@@ -1187,7 +1186,7 @@ def _run_auto_cycle():
     except Exception:
         pass
 
-    cycle_results = []
+
     for msg_id in new_ids:
         # Fetch subject / sender for logging
         subject = "(unknown)"
@@ -1219,25 +1218,25 @@ def _run_auto_cycle():
         # Store the result in DB for every processed email
         _store_result_in_db(service, msg_id, result)
 
-        # Mark this ID as processed regardless of outcome so we don't retry endlessly
         with _auto_state_lock:
             _auto_state["processed_ids"].add(msg_id)
+            _auto_state["last_results"].append({
+                "msg_id":  msg_id,
+                "sender":  sender,
+                "subject": subject,
+                "status":  result.get("status"),
+                "method":  result.get("method"),
+                "reason":  result.get("reason"),
+            })
+            if len(_auto_state["last_results"]) > 200:
+                _auto_state["last_results"] = _auto_state["last_results"][-200:]
 
-        cycle_results.append({
-            "msg_id":  msg_id,
-            "sender":  sender,
-            "subject": subject,
-            "status":  result.get("status"),
-            "method":  result.get("method"),
-            "reason":  result.get("reason"),
-        })
         logger.info(
             "[AutoUnsub] %s → status=%s method=%s",
             sender, result.get("status"), result.get("method")
         )
 
     with _auto_state_lock:
-        _auto_state["last_results"] = cycle_results
         _auto_state["cycle_count"] += 1
         _auto_state["last_run"] = datetime.now().isoformat()
 

@@ -40,6 +40,7 @@ export default function AdminDashboardPage() {
   const [theme, setTheme] = useState('yellow');
   const [loaderData, setLoaderData] = useState<any>(null);
   const [refreshData, setRefreshData] = useState<any>(null);
+  const [liveData, setLiveData] = useState<any>(null);
   const [showLoader, setShowLoader] = useState(true);
   const fullLoaderRef = useRef<HTMLDivElement>(null);
   const fullLottieContainerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,49 @@ export default function AdminDashboardPage() {
   const [avatarOpen, setAvatarOpen] = useState(false);
 
   const [autoStatus, setAutoStatus] = useState<AutoStatus | null>(null);
+  const [terminalLogs, setTerminalLogs] = useState<{ id: string; time: string; text: string; color: string }[]>([]);
+  const [terminalQueue, setTerminalQueue] = useState<any[]>([]);
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+  
+  const processingEmailsRef = useRef<Set<string>>(new Set());
+  const terminalProcessedSet = useRef<Set<string>>(new Set());
+  const originalEmailsRef = useRef<Map<string, Email>>(new Map());
+
+  useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [terminalLogs]);
+
+  useEffect(() => {
+    if (terminalQueue.length > 0 && !isProcessingQueue) {
+      setIsProcessingQueue(true);
+      const item = terminalQueue[0];
+      
+      const log = (text: string, color: string) => {
+        setTerminalLogs(prev => [...prev.slice(-99), { id: Math.random().toString(), time: new Date().toLocaleTimeString(), text, color }]);
+      };
+      
+      log(`Just received the mail from ${item.sender}`, '#e5e7eb');
+      
+      setTimeout(() => {
+        log(`Processing the unsubscribing...`, '#93c5fd');
+        setTimeout(() => {
+          const color = item.status === 'success' ? '#4ade80' : (item.status === 'error' ? '#f87171' : '#facc15');
+          log(`Result: ${item.status}`, color);
+          
+          processingEmailsRef.current.delete(item.msg_id);
+          setRemovedIds(prev => new Set(prev).add(item.msg_id));
+          
+          setTerminalQueue(prev => prev.slice(1));
+          setIsProcessingQueue(false);
+          
+        }, 500);
+      }, 2000);
+    }
+  }, [terminalQueue, isProcessingQueue]);
+
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   
   const avatarMenuRef = useRef<HTMLDivElement>(null);
@@ -76,7 +120,9 @@ export default function AdminDashboardPage() {
       .then(r => r.json())
       .then((data: Email[] | { error: string }) => {
         if ('error' in data) { router.push('/sign-in'); return; }
-        setEmails(data as Email[]);
+        const arr = data as Email[];
+        arr.forEach(e => originalEmailsRef.current.set(e.id, e));
+        setEmails(arr);
         setContentTitle(title);
         setLoading(false);
       })
@@ -89,7 +135,20 @@ export default function AdminDashboardPage() {
     refreshingRef.current = true;
     fetch('/api/emails?label=INBOX&q=is:unread')
       .then(r => r.json())
-      .then((data: Email[]) => { setEmails(data); setContentTitle('Unsub\'s Live'); })
+      .then((data: Email[]) => { 
+        const newData = [...data];
+        data.forEach(e => originalEmailsRef.current.set(e.id, e));
+        
+        processingEmailsRef.current.forEach(pid => {
+          if (!newData.find(e => e.id === pid)) {
+            const cached = originalEmailsRef.current.get(pid);
+            if (cached) newData.push(cached);
+          }
+        });
+        
+        setEmails(newData); 
+        setContentTitle('Unsub\'s Live'); 
+      })
       .catch(() => {})
       .finally(() => { refreshingRef.current = false; });
   }, []);
@@ -101,6 +160,7 @@ export default function AdminDashboardPage() {
 
     fetch('/loader.json').then(r => r.json()).then(setLoaderData).catch(console.error);
     fetch('/refresh.json').then(r => r.json()).then(setRefreshData).catch(console.error);
+    fetch('/live.json').then(r => r.json()).then(setLiveData).catch(console.error);
 
     // Fetch admin data
     fetch('/api/admin/users').then(r => r.json()).then(d => { if(!d.error) setUsers(d); setUsersLoading(false); }).catch(()=>setUsersLoading(false));
@@ -111,7 +171,9 @@ export default function AdminDashboardPage() {
       .then(r => r.json())
       .then((data: Email[] | { error: string }) => {
         if ('error' in data) { router.push('/sign-in'); return; }
-        setEmails(data as Email[]);
+        const arr = data as Email[];
+        arr.forEach(e => originalEmailsRef.current.set(e.id, e));
+        setEmails(arr);
         setLoading(false);
       })
       .catch(() => router.push('/sign-in'));
@@ -149,6 +211,20 @@ export default function AdminDashboardPage() {
           silentRefresh();
         }
         
+        if (data.last_results && data.last_results.length > 0) {
+          const newItems: any[] = [];
+          data.last_results.forEach(res => {
+            if (!terminalProcessedSet.current.has(res.msg_id)) {
+              terminalProcessedSet.current.add(res.msg_id);
+              processingEmailsRef.current.add(res.msg_id);
+              newItems.push(res);
+            }
+          });
+          if (newItems.length > 0) {
+            setTerminalQueue(prev => [...prev, ...newItems]);
+          }
+        }
+
         if (lastProcessedRef.current !== -1 && data.processed > lastProcessedRef.current) {
           silentRefresh();
         }
@@ -348,9 +424,9 @@ export default function AdminDashboardPage() {
         }
         .status-pill.idle .status-dot { background: var(--text-dim); box-shadow: none; animation: none; }
         .status-text { font-size: 1rem; font-weight: 800; color: #065f46; letter-spacing: 0.04em; }
-        .status-pill.idle .status-text { color: var(--text-muted); }
-
-        /* Inbox list integrated */
+        .db-card { background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        .glass-panel { background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 12px 40px rgba(0,0,0,0.04); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
+        
         .content-header { padding: 20px 30px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
         .content-title { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
         .content-count { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; background: rgba(0,0,0,0.05); padding: 4px 12px; border-radius: 99px; }
@@ -451,14 +527,18 @@ export default function AdminDashboardPage() {
               <p>Here&apos;s your unsubscribe activity at a glance.</p>
             </div>
 
-            <div className="db-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%' }}>
-             <div className="db-card" style={{ gridColumn: '1 / 2' }}>
+            <div className="db-grid" style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '20px', width: '100%' }}>
+             <div className="glass-panel" style={{ gridColumn: '1 / 2' }}>
                <div className="content-header">
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                   <h1 className="content-title">{contentTitle}</h1>
-                   <span className="content-count">{emails.length} unread</span>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <h1 className="content-title" style={{ margin: 0 }}>{contentTitle}</h1>
+                   {liveData && (
+                     <div style={{ width: '49px', height: '49px' }}>
+                       <Lottie animationData={liveData} loop={true} autoplay={true} />
+                     </div>
+                   )}
                  </div>
-
+                 <span className="content-count">{emails.length} unread</span>
                </div>
 
                <div className="email-list">
@@ -514,10 +594,38 @@ export default function AdminDashboardPage() {
                        })}
                      </div>
                    </>
-                 )}
-               </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Terminal UI */}
+              <div className="db-card terminal-card" style={{ gridColumn: '2 / 3', background: 'rgba(28, 28, 30, 0.95)', backdropFilter: 'blur(10px)', color: '#10b981', fontFamily: 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '500px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                {/* Mac OS Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2d2d2d', padding: '10px 16px', borderBottom: '1px solid #1a1a1a', position: 'relative' }}>
+                  <div style={{ display: 'flex', gap: '8px', position: 'absolute', left: '16px' }}>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }} />
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ffbd2e' }} />
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27c93f' }} />
+                  </div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#a1a1aa' }}>bash - admin@unsub</div>
+                </div>
+                {/* Terminal Body */}
+                <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
+                  {terminalLogs.length === 0 ? (
+                    <div style={{ color: '#52525b', fontStyle: 'italic', marginTop: '4px' }}>No data this session...</div>
+                  ) : (
+                    terminalLogs.map(log => (
+                      <div key={log.id} style={{ color: log.color, lineHeight: 1.5 }}>
+                        <span style={{ color: '#6b7280', marginRight: '8px' }}>[{log.time}]</span>
+                        {log.text}
+                      </div>
+                    ))
+                  )}
+                  <div ref={terminalEndRef} />
+                </div>
+              </div>
+
              </div>
-            </div>
 
           </main>
         </div>
