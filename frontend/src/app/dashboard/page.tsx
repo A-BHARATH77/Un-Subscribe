@@ -211,13 +211,18 @@ function DashboardContent() {
 
     const qs = `?email=${encodeURIComponent(email)}`;
 
-    fetch(`/api/user/info${qs}`)
-      .then(r => r.json())
-      .then((data: UserInfo & { error?: string }) => {
+    const fetchInfo = async () => {
+      try {
+        const r = await fetch(`/api/user/info${qs}`);
+        const data: UserInfo & { error?: string } = await r.json();
         if (data.error) { router.push('/sign-in'); return; }
         setInfo(data);
-      })
-      .catch(() => router.push('/sign-in'));
+      } catch (e) {
+        // silently fail on interval, push on hard fail if needed
+      }
+    };
+
+    fetchInfo();
 
     // Initial load: fetch logs, seed last 3 as chat history, set up polling
     const fetchLogs = async (isFirst = false) => {
@@ -263,9 +268,9 @@ function DashboardContent() {
               newEntries.push(log);
             }
           }
-          if (newEntries.length > 0) {
-            setLogs(data); // Update logs state to automatically reload charts and dashboard stats
-          }
+          // ALWAYS update logs state to keep charts and dashboard stats fresh
+          setLogs(data);
+
           // Show new messages one by one — each one waits for the previous
           // hero msg + user reply + 1 min gap before the next hero starts typing
           const entriesReversed = [...newEntries].reverse();
@@ -292,6 +297,7 @@ function DashboardContent() {
     fetchLogs(true);
     fetchUnread();
     const interval = setInterval(() => {
+      fetchInfo();
       fetchLogs(false);
       fetchUnread();
     }, 60_000);
