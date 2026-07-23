@@ -1882,9 +1882,7 @@ function DashboardContent() {
             </div>
 
             {/* ── 3D Pie & Contribution Section ── */}
-            {bubbleData.length > 0 && (
-              <div style={{ display: 'flex', gap: '24px', marginTop: '24px', alignItems: 'stretch' }}>
-                
+            <div style={{ display: 'flex', gap: '24px', marginTop: '24px', alignItems: 'stretch' }}>
                 {/* Moved Results Breakdown */}
                 <div className="db-card db-chart-card" style={{ flex: '1.5', display: 'flex', flexDirection: 'column' }}>
                   <div className="db-chart-header">
@@ -1895,20 +1893,24 @@ function DashboardContent() {
                   </div>
                   <div style={{ flex: 1, minHeight: '260px', display: 'flex', flexDirection: 'column', position: 'relative', paddingTop: '40px', paddingBottom: '40px', paddingLeft: '60px', paddingRight: '20px' }}>
                     
-                    {/* Y-Axis Grid Lines */}
-                    <div style={{ position: 'absolute', top: '40px', bottom: '40px', left: '60px', right: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
-                      {[1, 0.75, 0.5, 0.25, 0].map((ratio, idx) => {
-                        const val = Math.round(barMaxCount * ratio);
-                        return (
-                          <div key={`grid-${idx}`} style={{ width: '100%', borderTop: '1px dashed rgba(0,0,0,0.08)', position: 'relative' }}>
-                            <span style={{ position: 'absolute', left: '-45px', top: '-9px', fontSize: '12px', fontWeight: 600, color: '#888', width: '35px', textAlign: 'right' }}>{val}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {barChartData.length === 0 ? (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontWeight: 500 }}>No results to display</div>
+                    ) : (
+                      <>
+                        {/* Y-Axis Grid Lines */}
+                        <div style={{ position: 'absolute', top: '40px', bottom: '40px', left: '60px', right: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                          {[1, 0.75, 0.5, 0.25, 0].map((ratio, idx) => {
+                            const val = Math.round(barMaxCount * ratio);
+                            return (
+                              <div key={`grid-${idx}`} style={{ width: '100%', borderTop: '1px dashed rgba(0,0,0,0.08)', position: 'relative' }}>
+                                <span style={{ position: 'absolute', left: '-45px', top: '-9px', fontSize: '12px', fontWeight: 600, color: '#888', width: '35px', textAlign: 'right' }}>{val}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
 
-                    {/* Bars Container */}
-                    <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'flex-end', flex: 1, zIndex: 1, position: 'relative', gap: '8px' }}>
+                        {/* Bars Container */}
+                        <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'flex-end', flex: 1, zIndex: 1, position: 'relative', gap: '8px' }}>
                       {barChartData.map((d, i) => {
                         const heightPct = barMaxCount > 0 ? (d.count / barMaxCount) * 100 : 0;
                         const color = d.result === 'SUCCESS' ? '#22c55e' : 
@@ -1960,6 +1962,8 @@ function DashboardContent() {
                         );
                       })}
                     </div>
+                  </>
+                  )}
                   </div>
                 </div>
 
@@ -1972,11 +1976,15 @@ function DashboardContent() {
                     Hall Of Unsub
                   </div>
                   
-                  {/* The 3D wrapper for just the SVG slices */}
-                  <div 
-                    style={{ 
-                      position: 'relative', 
-                      width: '400px', height: '400px', 
+                  {pieSlices.length === 0 ? (
+                    <div style={{ width: '100%', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontWeight: 500, marginTop: '20px' }}>No unsubs to display</div>
+                  ) : (
+                    <>
+                      {/* The 3D wrapper for just the SVG slices */}
+                      <div 
+                        style={{ 
+                          position: 'relative', 
+                          width: '400px', height: '400px', 
                       transformStyle: 'preserve-3d',
                       transform: 'rotateX(60deg) rotateZ(-25deg)',
                       transition: 'transform 0.5s ease',
@@ -2065,6 +2073,8 @@ function DashboardContent() {
                       );
                     })}
                   </div>
+                  </>
+                  )}
                 </div>
 
                 <div 
@@ -2113,12 +2123,11 @@ function DashboardContent() {
                       </div>
                     ))}
                     {contributionData.length === 0 && (
-                       <div style={{ color: '#888', fontSize: '0.8rem', textAlign: 'center', marginTop: '20px', fontWeight: 500 }}>No contribution data yet.</div>
+                       <div style={{ color: '#888', fontSize: '0.9rem', textAlign: 'center', marginTop: '60px', fontWeight: 500 }}>No contribution data yet</div>
                     )}
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
 
           </main>
 
