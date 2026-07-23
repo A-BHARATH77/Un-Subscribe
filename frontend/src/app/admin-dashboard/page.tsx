@@ -59,6 +59,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [contentTitle, setContentTitle] = useState('Unsub\'s Live');
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [showLiveView, setShowLiveView] = useState(false);
 
   const [autoStatus, setAutoStatus] = useState<AutoStatus | null>(null);
   const [terminalLogs, setTerminalLogs] = useState<{ id: string; time: string; text: string; color: string }[]>([]);
@@ -237,7 +238,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     updateServerAutoStatus();
-    const interval = setInterval(updateServerAutoStatus, 3000);
+    const interval = setInterval(updateServerAutoStatus, 10000);
     return () => { clearInterval(interval); if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
   }, [updateServerAutoStatus]);
 
@@ -324,7 +325,7 @@ export default function AdminDashboardPage() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { height: auto !important; min-height: 100% !important; overflow-x: hidden !important; font-family: 'Plus Jakarta Sans', sans-serif; }
+        html, body { min-height: 100vh; overflow-x: hidden !important; overflow-y: auto !important; font-family: 'Plus Jakarta Sans', sans-serif; }
 
         .db-root {
           --bg1: ${activeTheme.bg1};
@@ -431,7 +432,7 @@ export default function AdminDashboardPage() {
         .content-title { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
         .content-count { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; background: rgba(0,0,0,0.05); padding: 4px 12px; border-radius: 99px; }
         
-        .email-list { flex: 1; height: 40vh; overflow-y: auto; padding: 8px 0; position: relative; }
+        .email-list { flex: 1; min-height: 400px; overflow-y: auto; padding: 8px 0; position: relative; }
         .email-list::-webkit-scrollbar { width: 6px; }
         .email-list::-webkit-scrollbar-track { background: transparent; }
         .email-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 100px; }
@@ -516,7 +517,15 @@ export default function AdminDashboardPage() {
               </div>
               UnSub Admin
             </div>
-            {/* nav right removed */}
+            <div className="db-nav-right">
+              <button 
+                className="action-button" 
+                onClick={() => setShowLiveView(!showLiveView)}
+                style={{ background: showLiveView ? '#dc2626' : 'var(--primary)' }}
+              >
+                {showLiveView ? 'Hide Live Stream' : 'Watch Live Stream'}
+              </button>
+            </div>
           </nav>
 
           <main className="db-body">
@@ -527,8 +536,8 @@ export default function AdminDashboardPage() {
               <p>Here&apos;s your unsubscribe activity at a glance.</p>
             </div>
 
-            <div className="db-grid" style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '20px', width: '100%' }}>
-             <div className="glass-panel" style={{ gridColumn: '1 / 2' }}>
+            <div className="db-grid" style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '20px', width: '100%', minHeight: '500px' }}>
+             <div className="glass-panel" style={{ gridColumn: '1 / 2', display: 'flex', flexDirection: 'column' }}>
                <div className="content-header">
                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                    <h1 className="content-title" style={{ margin: 0 }}>{contentTitle}</h1>
@@ -538,7 +547,7 @@ export default function AdminDashboardPage() {
                      </div>
                    )}
                  </div>
-                 <span className="content-count">{emails.length} unread</span>
+                 <span className="content-count">{emails.filter(e => !removedIds.has(e.id)).length} unread</span>
                </div>
 
                <div className="email-list">
@@ -549,7 +558,7 @@ export default function AdminDashboardPage() {
                    </div>
                  ) : (
                    <>
-                     <div className={`empty-state ${emails.length === 0 ? 'visible' : 'hidden'}`}>
+                     <div className={`empty-state ${emails.filter(e => !removedIds.has(e.id)).length === 0 ? 'visible' : 'hidden'}`}>
                        {refreshData ? (
                          <div style={{ width: '120px', height: '120px' }}>
                            <Lottie animationData={refreshData} loop={true} autoplay={true} />
@@ -599,7 +608,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Terminal UI */}
-              <div className="db-card terminal-card" style={{ gridColumn: '2 / 3', background: 'rgba(28, 28, 30, 0.95)', backdropFilter: 'blur(10px)', color: '#10b981', fontFamily: 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '500px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="db-card terminal-card" style={{ gridColumn: '2 / 3', background: 'rgba(28, 28, 30, 0.95)', backdropFilter: 'blur(10px)', color: '#10b981', fontFamily: 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '500px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                 {/* Mac OS Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2d2d2d', padding: '10px 16px', borderBottom: '1px solid #1a1a1a', position: 'relative' }}>
                   <div style={{ display: 'flex', gap: '8px', position: 'absolute', left: '16px' }}>
@@ -657,6 +666,38 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+
+      <div className={`db-overlay ${showLiveView ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setShowLiveView(false); }}>
+        <div className="db-overlay-card" style={{ maxWidth: '900px', width: '90%', padding: '24px' }}>
+          <button className="db-overlay-close" onClick={() => setShowLiveView(false)}>✕</button>
+          
+          <div style={{ width: '100%', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1a1a1a' }}>
+              Live Browser Feed
+              <div style={{ fontSize: '0.85rem', color: '#888', fontWeight: 500, marginTop: '4px' }}>Watching background unsubscribe process...</div>
+            </div>
+            <div className="status-dot" style={{ background: '#ef4444', boxShadow: '0 0 10px #ef4444' }}></div>
+          </div>
+          
+          <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: '12px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', color: '#666', zIndex: 0, fontWeight: 600 }}>
+              Waiting for active unsubscribe session...
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src="http://localhost:5000/api/stream-browser" 
+              alt="Live Browser Stream" 
+              style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1 }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.opacity = '0';
+              }}
+              onLoad={(e) => {
+                (e.target as HTMLImageElement).style.opacity = '1';
+              }}
+            />
+          </div>
+        </div>
+      </div>
 
     </>
   );

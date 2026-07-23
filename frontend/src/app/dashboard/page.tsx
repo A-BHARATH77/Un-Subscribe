@@ -53,6 +53,7 @@ function DashboardContent() {
   const [hoveredPoint, setHoveredPoint] = useState<{x: number, y: number, display: string, count: number} | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{result: string, count: number, x: number, y: number, w: number} | null>(null);
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
+  const [hoveredDayIndex, setHoveredDayIndex] = useState<number | null>(null);
 
   // Chat state
   interface ChatMsg { id: string; from: 'hero' | 'user'; text: string; }
@@ -343,6 +344,31 @@ function DashboardContent() {
   const medFill = getFill(-30, 30);
   const highFill = getFill(30, 90);
 
+  // Week Data for Progress Chart
+  const todayDate = new Date();
+  const currentDayOfWeek = todayDate.getDay();
+  const startOfWeek = new Date(todayDate);
+  startOfWeek.setDate(todayDate.getDate() - currentDayOfWeek);
+  
+  const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const weekData = [];
+  let totalMailsThisWeek = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const count = streaksByDay[dateStr] || 0;
+    totalMailsThisWeek += count;
+    weekData.push({
+      label: weekDays[i],
+      dateStr,
+      count,
+      isToday: i === currentDayOfWeek,
+      isFuture: i > currentDayOfWeek
+    });
+  }
+  const maxMailsThisWeek = Math.max(...weekData.map(d => d.count), 5);
+
   // Chart Data Preparation
   const chartData: { date: string, display: string, count: number }[] = [];
   
@@ -413,8 +439,21 @@ function DashboardContent() {
     const y = chartHeight - paddingY - (d.count / chartMaxCount) * (chartHeight - 2 * paddingY);
     return { x, y, display: d.display, count: d.count };
   });
-  const pointsStr = chartPoints.map(p => `${p.x},${p.y}`).join(' ');
-  const areaPoints = `${paddingX},${chartHeight - paddingY} ${pointsStr} ${chartWidth - paddingX},${chartHeight - paddingY}`;
+
+  let pathD = '';
+  let areaD = '';
+  if (chartPoints.length > 0) {
+    pathD = `M ${chartPoints[0].x},${chartPoints[0].y}`;
+    areaD = `M ${chartPoints[0].x},${chartHeight - paddingY} L ${chartPoints[0].x},${chartPoints[0].y}`;
+    for (let i = 1; i < chartPoints.length; i++) {
+      const p = chartPoints[i - 1];
+      const c = chartPoints[i];
+      const cpX = p.x + (c.x - p.x) / 2;
+      pathD += ` C ${cpX},${p.y} ${cpX},${c.y} ${c.x},${c.y}`;
+      areaD += ` C ${cpX},${p.y} ${cpX},${c.y} ${c.x},${c.y}`;
+    }
+    areaD += ` L ${chartPoints[chartPoints.length - 1].x},${chartHeight - paddingY} Z`;
+  }
 
   // Bar Chart Data Preparation
   const resultsCount: Record<string, number> = {};
@@ -428,8 +467,7 @@ function DashboardContent() {
   })).sort((a, b) => b.count - a.count);
   
   const barMaxCount = Math.max(5, ...barChartData.map(d => d.count));
-  const barWidth = barChartData.length ? ((chartWidth - 2 * paddingX) / barChartData.length) * 0.2 : 0;
-  const barSpacing = barChartData.length ? (chartWidth - 2 * paddingX) / barChartData.length : 0;
+  
 
   // Bubble Data Preparation
   const orgCounts: Record<string, number> = {};
@@ -438,7 +476,6 @@ function DashboardContent() {
     orgCounts[org] = (orgCounts[org] || 0) + 1;
   });
   const bubbleData = Object.keys(orgCounts).map(org => ({ org, count: orgCounts[org] })).sort((a, b) => b.count - a.count);
-  const bubbleMaxCount = bubbleData.length > 0 ? bubbleData[0].count : 1;
 
   // 3D Pie Chart Data
   const topPieBubbles = bubbleData;
@@ -660,12 +697,8 @@ function DashboardContent() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 14px 40px;
-          background: rgba(255,255,255,0.45);
-          backdrop-filter: blur(28px);
-          -webkit-backdrop-filter: blur(28px);
-          border-bottom: 1px solid rgba(255,255,255,0.6);
-          box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+          padding: 28px 40px;
+          background: transparent;
           position: sticky;
           top: 0;
           z-index: 100;
@@ -674,10 +707,13 @@ function DashboardContent() {
           display: flex;
           align-items: center;
           gap: 10px;
-          font-size: 1.05rem;
-          font-weight: 800;
+          font-size: 1.15rem;
+          font-weight: 700;
           color: #1a1a1a;
-          letter-spacing: -0.03em;
+          letter-spacing: -0.01em;
+          border: 2px solid rgba(0,0,0,0.25);
+          border-radius: 99px;
+          padding: 8px 24px;
         }
         .db-logo-icon {
           width: 34px; height: 34px;
@@ -788,7 +824,7 @@ function DashboardContent() {
         /* ── Grid layout for cards ── */
         .db-grid {
           display: grid;
-          grid-template-columns: minmax(0, 360px) minmax(0, 360px);
+          grid-template-columns: repeat(3, minmax(0, 360px));
           justify-content: center;
           gap: 20px;
         }
@@ -817,10 +853,8 @@ function DashboardContent() {
           box-shadow: 0 10px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
         }
 
-        /* ── Time Saved card (col 1, row 1) ── */
+        /* ── Time Saved card ── */
         .db-clock-card {
-          grid-column: 1;
-          grid-row: 1;
           padding: 28px 24px;
           display: flex;
           flex-direction: column;
@@ -1333,7 +1367,7 @@ function DashboardContent() {
         .chart-grid { stroke: #f4f4f4; stroke-dasharray: 4; stroke-width: 1; }
         .chart-line { fill: none; stroke: var(--primary-dark); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
         .chart-area { fill: url(#chartGradient); }
-        .chart-point { fill: #fff; stroke: var(--primary-dark); stroke-width: 2; transition: r 0.2s; cursor: pointer; }
+        .chart-point { fill: var(--primary-dark); stroke: #fff; stroke-width: 2; transition: r 0.2s; cursor: pointer; }
         .chart-point:hover { r: 6; }
         .chart-label { font-size: 11px; fill: #444; text-anchor: middle; font-weight: 600; }
         .chart-y-label { font-size: 11px; fill: #444; text-anchor: end; font-weight: 600; alignment-baseline: middle; }
@@ -1563,28 +1597,61 @@ function DashboardContent() {
             {/* ── Card Grid ── */}
             <div className="db-grid">
 
+              {/* Profile Card */}
+              <div className="db-card" style={{ position: 'relative', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', minHeight: '340px', overflow: 'hidden' }}>
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Lora Piterson" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
+                
+                {/* Gradient overlay */}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(225, 218, 205, 0.95) 0%, rgba(225, 218, 205, 0.6) 30%, transparent 60%)', zIndex: 1 }}></div>
+                
+                {/* Content */}
+                <div style={{ position: 'relative', zIndex: 2, padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
+                  <div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 600, color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>Lora Piterson</div>
+                    <div style={{ fontSize: '0.9rem', color: '#fff', opacity: 0.9, fontWeight: 500, marginTop: '4px', textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>UX/UI Designer</div>
+                  </div>
+                  <div style={{ padding: '8px 20px', borderRadius: '99px', border: '1px solid rgba(255,255,255,0.7)', color: '#fff', fontSize: '1rem', fontWeight: 500, background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)' }}>
+                    $1,200
+                  </div>
+                </div>
+              </div>
+
               {/* Time Saved Clock Card */}
-              <div className="db-card db-clock-card">
+              <div className="db-card db-clock-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '24px', right: '24px', width: '50px', height: '50px', filter: 'invert(0.8)' }}>
                   {clockData && <Lottie animationData={clockData} loop={true} autoplay={true} />}
                 </div>
-                <div className="db-unread-pill">
+                <div className="db-unread-pill" style={{ alignSelf: 'flex-start' }}>
                   <span className="db-unread-dot" />
                   {unreadCount} Unread {unreadCount === 1 ? 'Email' : 'Emails'}
                 </div>
                 
-                <div className="db-clock-title">Estimated Time</div>
-                <div className="db-clock-display">
-                  <div className="db-flip-box">
-                    <span className="db-flip-label">HR</span>
-                    <span className="db-clock-digit">{hh}</span>
-                  </div>
-                  <div className="db-flip-box">
-                    <span className="db-flip-label">MIN</span>
-                    <span className="db-clock-digit">{mm}</span>
+                <div style={{ position: 'relative', width: '220px', height: '220px', marginTop: '24px' }}>
+                  <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}>
+                    {/* Outer tick marks */}
+                    <circle cx="110" cy="110" r="95" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="8" strokeDasharray="4 12" />
+                    
+                    {/* Progress bar */}
+                    <circle cx="110" cy="110" r="95" fill="none" stroke="var(--primary)" strokeWidth="16" strokeLinecap="round" 
+                            strokeDasharray={2 * Math.PI * 95} 
+                            strokeDashoffset={2 * Math.PI * 95 * (1 - Math.min(totalMinutesSaved / 60, 1))}
+                            style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+                  </svg>
+                  
+                  {/* Inner Text */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontSize: '2.8rem', fontWeight: 300, color: '#111', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                      {hh}:{mm}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#666', marginTop: '6px' }}>
+                      Time Estimated
+                    </div>
                   </div>
                 </div>
-                <div className="db-clock-subtitle">Approx. time to manually unsubscribe (4m each)</div>
+                
+                <div className="db-clock-subtitle" style={{ marginTop: '24px', textAlign: 'center', color: '#888' }}>
+                  Approx. time to manually unsubscribe (4m each)
+                </div>
               </div>
 
               {/* Activity / Progress card */}
@@ -1593,39 +1660,66 @@ function DashboardContent() {
                   {fireData && <Lottie animationData={fireData} loop={true} autoplay={true} />}
                 </div>
                 <div className="db-card-header">
-                  <span className="db-card-title" style={{ fontSize: '1.1rem', fontWeight: 500, color: '#1a1a1a', textTransform: 'none' }}>Streak</span>
+                  <span className="db-card-title" style={{ fontSize: '1.4rem', fontWeight: 500, color: '#1a1a1a', textTransform: 'none', letterSpacing: '-0.02em' }}>Streak</span>
                 </div>
-                <div>
-                  <span className="db-activity-big-num">{logsLoading ? '—' : streakCount}</span>
-                  <span className="db-activity-big-sub">Unsubscribed today</span>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                  <span className="db-activity-big-num" style={{ fontSize: '3.4rem', fontWeight: 300, letterSpacing: '-0.04em' }}>{logsLoading ? '—' : totalMailsThisWeek}</span>
+                  <span className="db-activity-big-sub" style={{ fontSize: '0.85rem', color: '#666', lineHeight: 1.3, display: 'flex', flexDirection: 'column' }}>
+                    <span>Mails sent</span>
+                    <span>this week</span>
+                  </span>
                 </div>
-                {/* Speedometer */}
-                <div className="db-speedometer-container">
-                  <svg viewBox="0 12 200 105" className="db-speedometer-svg">
-                    {/* Background (Dull) */}
-                    <path d="M 20 100 A 80 80 0 0 1 30.72 60" fill="none" stroke="#fca5a5" strokeWidth="16" />
-                    <path d="M 30.72 60 A 80 80 0 0 1 169.28 60" fill="none" stroke="#fde047" strokeWidth="16" />
-                    <path d="M 169.28 60 A 80 80 0 0 1 180 100" fill="none" stroke="#86efac" strokeWidth="16" />
 
-                    {/* Foreground (Vibrant), dynamically drawn left of needle */}
-                    <path d="M 20 100 A 80 80 0 0 1 30.72 60" fill="none" stroke="#ef4444" strokeWidth="16" strokeDasharray={`${lowFill} ${arcLength}`} />
-                    <path d="M 30.72 60 A 80 80 0 0 1 169.28 60" fill="none" stroke="#eab308" strokeWidth="16" strokeDasharray={`${medFill} ${arcLength}`} />
-                    <path d="M 169.28 60 A 80 80 0 0 1 180 100" fill="none" stroke="#22c55e" strokeWidth="16" strokeDasharray={`${highFill} ${arcLength}`} />
+                <div className="db-progress-chart" style={{ position: 'relative', height: '170px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '10px', paddingBottom: '10px' }}>
+                  
+                  {weekData.map((d, i) => {
+                    const heightPct = d.count > 0 ? Math.max((d.count / maxMailsThisWeek) * 100, 15) : 20;
+                    const isZero = d.count === 0;
+                    const showBubble = d.isToday || hoveredDayIndex === i;
                     
-                    <text x="25" y="115" fontSize="10" fill="#888" fontWeight="bold">LOW</text>
-                    <text x="100" y="45" fontSize="10" fill="#888" fontWeight="bold" textAnchor="middle">MED</text>
-                    <text x="175" y="115" fontSize="10" fill="#888" fontWeight="bold" textAnchor="end">HIGH</text>
-
-                    {/* Needle */}
-                    <g transform={`rotate(${needleAngle} 100 100)`} style={{ transition: 'transform 1s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-                      <polygon points="96,100 104,100 100,25" fill="#1a1a1a" />
-                      <circle cx="100" cy="100" r="8" fill="#1a1a1a" />
-                      <circle cx="100" cy="100" r="3" fill="#fff" />
-                    </g>
-                  </svg>
-                  <div className="db-speedometer-label">
-                    <span className="db-speedometer-text">Today's Streak</span>
-                  </div>
+                    return (
+                      <div 
+                        key={i} 
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, height: '100%', justifyContent: 'flex-end', cursor: 'pointer' }}
+                        onMouseEnter={() => setHoveredDayIndex(i)}
+                        onMouseLeave={() => setHoveredDayIndex(null)}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'center', width: 0 }}>
+                          <div style={{ 
+                            opacity: showBubble ? 1 : 0,
+                            pointerEvents: 'none',
+                            background: d.isToday ? 'var(--primary)' : '#1a1a1a', 
+                            color: d.isToday ? '#111' : '#fff', 
+                            fontSize: '0.7rem', 
+                            fontWeight: 600, 
+                            padding: '3px 6px', 
+                            borderRadius: '12px', 
+                            whiteSpace: 'nowrap', 
+                            marginBottom: '12px', 
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            transition: 'opacity 0.2s ease'
+                          }}>
+                            {d.count} mails
+                          </div>
+                        </div>
+                        
+                        <div style={{ 
+                          width: '12px', 
+                          height: `${heightPct}%`, 
+                          maxHeight: '80px',
+                          background: d.isToday ? 'var(--primary)' : (isZero ? 'repeating-linear-gradient(45deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 3px, transparent 3px, transparent 6px)' : '#262626'),
+                          borderRadius: '99px',
+                          marginBottom: '16px',
+                          transition: 'height 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        }}></div>
+                        
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: d.isToday ? 'var(--primary)' : (isZero ? '#d4d4d4' : '#262626'), marginBottom: d.isToday ? '16px' : '8px' }}></div>
+                        
+                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: d.isToday ? '#111' : '#999' }}>{d.label}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1673,10 +1767,10 @@ function DashboardContent() {
                     })}
 
                     {/* Area under the line */}
-                    <polygon points={areaPoints} className="chart-area" />
+                    <path d={areaD} className="chart-area" />
                     
                     {/* The Line */}
-                    <polyline points={pointsStr} className="chart-line" />
+                    <path d={pathD} className="chart-line" />
 
                     {/* Data Points and X-Axis Labels */}
                     {chartPoints.map((p, i) => {
@@ -1724,75 +1818,64 @@ function DashboardContent() {
               </div>
 
 
-              {/* Full-width Bar Chart */}
-              <div className="db-card db-chart-card">
-                <div className="db-chart-header">
-                  <span className="db-chart-title">Results Breakdown</span>
-                  <div style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {searchData && <Lottie style={{ transform: 'scale(2.0)', transformOrigin: 'center' }} animationData={searchData} loop={true} autoplay={true} />}
-                  </div>
+              {/* Calendar Component (replacing Results Breakdown) */}
+              <div className="db-card" style={{ padding: '30px', display: 'flex', flexDirection: 'column' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '40px' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 500, color: '#1a1a1a' }}>September 2024</div>
                 </div>
-                <div className="db-chart-wrap">
-                  <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="db-chart-svg">
-                    {/* Y-Axis Grid Lines */}
-                    {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-                      const y = paddingY + ratio * (chartHeight - 2 * paddingY);
-                      const val = Math.round(barMaxCount * (1 - ratio));
-                      return (
-                        <g key={`grid-${idx}`}>
-                          <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} className="chart-grid" />
-                          <text x={paddingX - 10} y={y} className="chart-y-label">{val}</text>
-                        </g>
-                      );
-                    })}
 
-                    {/* Bars and X-Axis Labels */}
-                    {barChartData.map((d, i) => {
-                      const xCenter = paddingX + (i + 0.5) * barSpacing;
-                      const x = xCenter - barWidth / 2;
-                      const barH = (d.count / barMaxCount) * (chartHeight - 2 * paddingY);
-                      const y = chartHeight - paddingY - barH;
-                      const color = d.result === 'SUCCESS' ? '#22c55e' : 
-                                    d.result === 'ERROR' ? '#ef4444' : 
-                                    d.result === 'SKIPPED' ? '#eab308' : '#888';
-                      return (
-                        <g key={`bar-${i}`}>
-                          <rect 
-                            x={x} y={y} width={barWidth} height={barH} 
-                            fill={color} rx="4"
-                            style={{ transition: 'all 0.2s', cursor: 'pointer' }}
-                            onMouseEnter={() => setHoveredBar({ result: d.result, count: d.count, x: xCenter, y, w: barWidth })}
-                            onMouseLeave={() => setHoveredBar(null)}
-                          />
-                          <text x={xCenter} y={chartHeight - paddingY + 24} className="chart-label">{d.result}</text>
-                        </g>
-                      );
-                    })}
+                {/* Grid */}
+                <div style={{ display: 'flex', position: 'relative', height: '280px' }}>
+                  {/* Y-Axis */}
+                  <div style={{ display: 'flex', flexDirection: 'column', width: '80px', color: '#555', fontSize: '0.9rem', fontWeight: 500, position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '72px' }}>8:00 am</div>
+                    <div style={{ position: 'absolute', top: '132px' }}>9:00 am</div>
+                    <div style={{ position: 'absolute', top: '192px' }}>10:00 am</div>
+                    <div style={{ position: 'absolute', top: '252px' }}>11:00 am</div>
+                  </div>
 
-                    {/* Custom Tooltip */}
-                    {hoveredBar && (
-                      <g className="chart-tooltip-group" style={{ pointerEvents: 'none' }}>
-                        <rect 
-                          x={hoveredBar.x - 50} 
-                          y={hoveredBar.y - 45} 
-                          width="100" 
-                          height="35" 
-                          rx="6" 
-                          fill="#1a1a1a" 
-                        />
-                        <polygon 
-                          points={`${hoveredBar.x - 6},${hoveredBar.y - 10} ${hoveredBar.x + 6},${hoveredBar.y - 10} ${hoveredBar.x},${hoveredBar.y - 4}`} 
-                          fill="#1a1a1a" 
-                        />
-                        <text x={hoveredBar.x} y={hoveredBar.y - 28} fill="#fff" fontSize="12" fontWeight="700" textAnchor="middle">
-                          {hoveredBar.count} emails
-                        </text>
-                        <text x={hoveredBar.x} y={hoveredBar.y - 15} fill="#aaa" fontSize="9" fontWeight="500" textAnchor="middle">
-                          {hoveredBar.result}
-                        </text>
-                      </g>
-                    )}
-                  </svg>
+                  {/* Columns */}
+                  <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
+                    {[{d: 'Mon', n: '22'}, {d: 'Tue', n: '23'}, {d: 'Wed', n: '24'}, {d: 'Thu', n: '25'}, {d: 'Fri', n: '26'}, {d: 'Sat', n: '27'}].map((day, i) => (
+                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '20px', color: day.d === 'Wed' ? '#111' : '#aaa' }}>
+                          <div style={{ fontSize: '1rem', fontWeight: 500 }}>{day.d}</div>
+                          <div style={{ fontSize: '1.1rem', fontWeight: day.d === 'Wed' ? 600 : 500, marginTop: '4px' }}>{day.n}</div>
+                        </div>
+                        {/* Dotted Line */}
+                        <div style={{ position: 'absolute', top: '60px', bottom: '0', width: '0', borderLeft: '1.5px dotted rgba(0,0,0,0.15)' }}></div>
+                      </div>
+                    ))}
+
+                    {/* Events */}
+                    {/* Theme Event */}
+                    <div style={{ position: 'absolute', top: '75px', left: '17%', width: '48%', background: 'var(--primary)', borderRadius: '16px', padding: '16px 20px', color: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 10 }}>
+                      <div>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '4px' }}>Weekly Team Sync</div>
+                        <div style={{ fontSize: '0.85rem', color: '#333', fontWeight: 600 }}>Discuss progress on projects</div>
+                      </div>
+                      <div style={{ display: 'flex' }}>
+                        {/* Avatars */}
+                        <img src="https://i.pravatar.cc/100?img=11" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)', marginLeft: '-10px', zIndex: 3, objectFit: 'cover' }} />
+                        <img src="https://i.pravatar.cc/100?img=47" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)', marginLeft: '-10px', zIndex: 2, objectFit: 'cover' }} />
+                        <img src="https://i.pravatar.cc/100?img=12" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)', marginLeft: '-10px', zIndex: 1, objectFit: 'cover' }} />
+                      </div>
+                    </div>
+
+                    {/* Light Event */}
+                    <div style={{ position: 'absolute', top: '185px', left: '49%', width: '36%', background: '#fff', borderRadius: '16px', padding: '16px 20px', color: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', zIndex: 10 }}>
+                      <div>
+                        <div style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>Onboarding Session</div>
+                        <div style={{ fontSize: '0.85rem', color: '#777', fontWeight: 500 }}>Introduction for new hires</div>
+                      </div>
+                      <div style={{ display: 'flex' }}>
+                        <img src="https://i.pravatar.cc/100?img=5" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #fff', marginLeft: '-10px', zIndex: 2, objectFit: 'cover' }} />
+                        <img src="https://i.pravatar.cc/100?img=8" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #fff', marginLeft: '-10px', zIndex: 1, objectFit: 'cover' }} />
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
               </div>
 
@@ -1801,6 +1884,85 @@ function DashboardContent() {
             {/* ── 3D Pie & Contribution Section ── */}
             {bubbleData.length > 0 && (
               <div style={{ display: 'flex', gap: '24px', marginTop: '24px', alignItems: 'stretch' }}>
+                
+                {/* Moved Results Breakdown */}
+                <div className="db-card db-chart-card" style={{ flex: '1.5', display: 'flex', flexDirection: 'column' }}>
+                  <div className="db-chart-header">
+                    <span className="db-chart-title">Results Breakdown</span>
+                    <div style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {searchData && <Lottie style={{ transform: 'scale(2.0)', transformOrigin: 'center' }} animationData={searchData} loop={true} autoplay={true} />}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minHeight: '260px', display: 'flex', flexDirection: 'column', position: 'relative', paddingTop: '40px', paddingBottom: '40px', paddingLeft: '60px', paddingRight: '20px' }}>
+                    
+                    {/* Y-Axis Grid Lines */}
+                    <div style={{ position: 'absolute', top: '40px', bottom: '40px', left: '60px', right: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                      {[1, 0.75, 0.5, 0.25, 0].map((ratio, idx) => {
+                        const val = Math.round(barMaxCount * ratio);
+                        return (
+                          <div key={`grid-${idx}`} style={{ width: '100%', borderTop: '1px dashed rgba(0,0,0,0.08)', position: 'relative' }}>
+                            <span style={{ position: 'absolute', left: '-45px', top: '-9px', fontSize: '12px', fontWeight: 600, color: '#888', width: '35px', textAlign: 'right' }}>{val}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bars Container */}
+                    <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'flex-end', flex: 1, zIndex: 1, position: 'relative', gap: '8px' }}>
+                      {barChartData.map((d, i) => {
+                        const heightPct = barMaxCount > 0 ? (d.count / barMaxCount) * 100 : 0;
+                        const color = d.result === 'SUCCESS' ? '#22c55e' : 
+                                      d.result === 'ERROR' ? '#ef4444' : 
+                                      d.result === 'SKIPPED' ? '#eab308' : '#888';
+                        const isHovered = hoveredBar?.result === d.result;
+                        
+                        return (
+                          <div 
+                            key={`bar-${i}`} 
+                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', flex: 1, maxWidth: '45px', position: 'relative', cursor: 'pointer' }}
+                            onMouseEnter={() => setHoveredBar(d)}
+                            onMouseLeave={() => setHoveredBar(null)}
+                          >
+                            {/* The Bar */}
+                            <div style={{ width: '100%', height: `${heightPct}%`, backgroundColor: color, borderRadius: '6px 6px 0 0', transition: 'all 0.2s ease-out', opacity: isHovered ? 0.8 : 1 }} />
+                            
+                            {/* The Label Below */}
+                            <div style={{ position: 'absolute', bottom: '-26px', fontSize: '13px', fontWeight: 600, color: '#555' }}>
+                              {d.result}
+                            </div>
+                            
+                            {/* The Tooltip */}
+                            <div style={{ 
+                              position: 'absolute', 
+                              bottom: `calc(${heightPct}% + 12px)`, 
+                              background: '#1a1a1a', 
+                              color: '#fff', 
+                              padding: '8px 12px', 
+                              borderRadius: '8px', 
+                              whiteSpace: 'nowrap', 
+                              zIndex: 10, 
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                              opacity: isHovered ? 1 : 0,
+                              pointerEvents: 'none',
+                              transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
+                              transform: isHovered ? 'translateY(0)' : 'translateY(4px)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '2px'
+                            }}>
+                              <span style={{ fontSize: '14px', fontWeight: 700 }}>{d.count} emails</span>
+                              <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 500 }}>{d.result}</span>
+                              {/* Tooltip Triangle */}
+                              <div style={{ position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1a1a1a' }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
                 {/* 3D Pie Chart */}
                 <div 
                   className="db-pie-container"

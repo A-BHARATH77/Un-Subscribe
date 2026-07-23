@@ -47,6 +47,38 @@ logging.getLogger("unsubscribe_engine").setLevel(logging.INFO)
 
 app = Flask(__name__)
 
+# ── Live Stream State ────────────────────────────────────────────────────────
+_stream_state = {
+    "frame": b"",
+    "viewers": 0,
+    "lock": threading.Lock()
+}
+
+def set_frame(frame_bytes):
+    with _stream_state["lock"]:
+        _stream_state["frame"] = frame_bytes
+
+@app.route("/api/stream-browser")
+def stream_browser():
+    def generate():
+        with _stream_state["lock"]:
+            _stream_state["viewers"] += 1
+        try:
+            while True:
+                with _stream_state["lock"]:
+                    frame = _stream_state["frame"]
+                if frame:
+                    yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+                time.sleep(0.5)
+        finally:
+            with _stream_state["lock"]:
+                _stream_state["viewers"] -= 1
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
+
 # ── Supabase config ───────────────────────────────────────────────────────────
 # Read from environment (set in .env or shell). The publishable key is safe to
 # use server-side for inserting rows via the REST API.
@@ -956,7 +988,9 @@ def api_unsubscribe_single(msg_id):
     try:
         html_body, list_unsub = _get_email_full(service, msg_id)
         admin_email = _get_user_email(service)   # always the admin's address
-        result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email)
+        
+        cb = set_frame if _stream_state["viewers"] > 0 else None
+        result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email, frame_callback=cb)
 
         # Mark as read on success; always store the result in DB
         marked_read = False
@@ -1035,7 +1069,8 @@ def api_unsubscribe_all():
             result = {"status": "error", "method": None, "reason": "Unknown", "url": None, "error": None}
             try:
                 html_body, list_unsub = _get_email_full(service, msg_id)
-                result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email)
+                cb = set_frame if _stream_state["viewers"] > 0 else None
+                result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email, frame_callback=cb)
             except Exception as exc:
                 result = {
                     "status": "error", "method": None,
@@ -1209,7 +1244,8 @@ def _run_auto_cycle():
         result = {"status": "error", "method": None, "reason": "Unknown", "url": None}
         try:
             html_body, list_unsub = _get_email_full(service, msg_id)
-            result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email)
+            cb = set_frame if _stream_state["viewers"] > 0 else None
+            result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email, frame_callback=cb)
         except Exception as exc:
             result = {"status": "error", "method": None, "reason": str(exc), "url": None}
 
