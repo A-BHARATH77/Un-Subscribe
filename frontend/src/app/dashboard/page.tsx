@@ -51,7 +51,7 @@ function DashboardContent() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [chartFilter, setChartFilter] = useState<'hourly'|'day'|'week'|'month'>('day');
   const [hoveredPoint, setHoveredPoint] = useState<{x: number, y: number, display: string, count: number} | null>(null);
-  const [hoveredBar, setHoveredBar] = useState<{result: string, count: number, x: number, y: number, w: number} | null>(null);
+  const [hoveredBar, setHoveredBar] = useState<{result: string, count: number} | null>(null);
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
   const [hoveredDayIndex, setHoveredDayIndex] = useState<number | null>(null);
 
