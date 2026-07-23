@@ -375,10 +375,11 @@ def authorize():
         hashlib.sha256(code_verifier.encode("ascii")).digest()
     ).rstrip(b"=").decode("ascii")
 
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
-        redirect_uri=url_for("oauth2callback", _external=True),
+        redirect_uri=f"{frontend_url}/oauth2callback",
     )
     authorization_url, state = flow.authorization_url(
         access_type="offline",
@@ -411,11 +412,12 @@ def oauth2callback():
     mode = oauth_data.get("mode", "signin")   # "signin" or "signup"
     name = oauth_data.get("name", "")
 
+    frontend_url_auth = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
         state=state,
-        redirect_uri=url_for("oauth2callback", _external=True),
+        redirect_uri=f"{frontend_url_auth}/oauth2callback",
     )
     flow.fetch_token(
         authorization_response=request.url,
