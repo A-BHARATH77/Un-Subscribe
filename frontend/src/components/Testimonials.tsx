@@ -12,12 +12,11 @@ export default function Testimonials() {
 <div suppressHydrationWarning>Testimonials</div>
 </div>
 <div className="spacer-medium" suppressHydrationWarning></div>
-<h2 animation="right" suppressHydrationWarning>What they say about us?</h2>
+<h2 animation="right" suppressHydrationWarning>What our users say?</h2>
 <div className="spacer-medium" suppressHydrationWarning></div>
 <div className="testi_wrap" suppressHydrationWarning>
 <div animation="right" className="text-color-secondary" suppressHydrationWarning>
-                    Here’s what they shared about their experience working with
-                    our team.
+                    Here’s what they shared about their experience cleaning their inboxes.
                   </div>
 <div className="arrows_wrap is-testimonals hide-mobile-landscape" suppressHydrationWarning>
 <div className="arrow_container slide_prev" suppressHydrationWarning>
@@ -53,13 +52,11 @@ export default function Testimonials() {
 <path d="M3.33398 6.66797H14.6673V16.868L8.69132 25.3346H5.06065L8.61532 17.3346H3.33398V6.66797ZM17.334 6.66797H28.6673V16.868L22.6913 25.3346H19.0607L22.6153 17.3346H17.334V6.66797Z" fill="currentColor" suppressHydrationWarning></path>
 </svg>
 <div className="text-lg text-style-3lines" suppressHydrationWarning>
-                            "They brought clarity to complex problems,
-                            breaking down barriers and delivering innovative
-                            solutions.”
+                            "It’s so simple. I just forward the emails I don’t want, and they magically stop appearing in my inbox."
                           </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="text-align-right" suppressHydrationWarning>
-                            - John Doe Tech Innovations
+                            - Jane D., Freelancer
                           </div>
 </div>
 </div>
@@ -80,13 +77,11 @@ export default function Testimonials() {
 <path d="M3.33398 6.66797H14.6673V16.868L8.69132 25.3346H5.06065L8.61532 17.3346H3.33398V6.66797ZM17.334 6.66797H28.6673V16.868L22.6913 25.3346H19.0607L22.6153 17.3346H17.334V6.66797Z" fill="currentColor" suppressHydrationWarning></path>
 </svg>
 <div className="text-lg text-style-3lines" suppressHydrationWarning>
-                            "Their insight resolved difficult hurdles,
-                            opening new paths and creating highly effective
-                            strategies."
+                            "I used to spend hours managing my subscriptions. Now I just forward and forget. Highly recommended!"
                           </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="text-align-right" suppressHydrationWarning>
-                            - John Doe Tech Innovations
+                            - Mark T., Marketer
                           </div>
 </div>
 </div>
@@ -104,13 +99,11 @@ export default function Testimonials() {
 <path d="M3.33398 6.66797H14.6673V16.868L8.69132 25.3346H5.06065L8.61532 17.3346H3.33398V6.66797ZM17.334 6.66797H28.6673V16.868L22.6913 25.3346H19.0607L22.6153 17.3346H17.334V6.66797Z" fill="currentColor" suppressHydrationWarning></path>
 </svg>
 <div className="text-lg text-style-3lines" suppressHydrationWarning>
-                            "We found focus for tricky requirements,
-                            cutting through noise and providing truly advanced
-                            responses."
+                            "A lifesaver! My inbox has never been this clean. No shady apps, just forwarding."
                           </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="text-align-right" suppressHydrationWarning>
-                            - John Doe Tech Innovations
+                            - Sarah L., Designer
                           </div>
 </div>
 </div>
@@ -128,13 +121,11 @@ export default function Testimonials() {
 <path d="M3.33398 6.66797H14.6673V16.868L8.69132 25.3346H5.06065L8.61532 17.3346H3.33398V6.66797ZM17.334 6.66797H28.6673V16.868L22.6913 25.3346H19.0607L22.6153 17.3346H17.334V6.66797Z" fill="currentColor" suppressHydrationWarning></path>
 </svg>
 <div className="text-lg text-style-3lines" suppressHydrationWarning>
-                            "They gave simple paths to hard puzzles,
-                            removing all delays while building fresh, brilliant
-                            projects."
+                            "I love the privacy-first approach. Finally a service that respects my data and actually works."
                           </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="text-align-right" suppressHydrationWarning>
-                            - John Doe Tech Innovations
+                            - Alex R., Developer
                           </div>
 </div>
 </div>

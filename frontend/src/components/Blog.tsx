@@ -10,14 +10,13 @@ export default function Blog() {
 <div suppressHydrationWarning>
 <div animation="right" className="tag" data-wf--tag-section--variant="base" suppressHydrationWarning>
 <div className="dot-square" suppressHydrationWarning></div>
-<div suppressHydrationWarning>Blog and articles</div>
+<div suppressHydrationWarning>Resources and Guides</div>
 </div>
 <div className="spacer-medium" suppressHydrationWarning></div>
-<h2 animation="right" suppressHydrationWarning>Latest insights and trends</h2>
+<h2 animation="right" suppressHydrationWarning>Tips for a Cleaner Inbox</h2>
 <div className="spacer-medium" suppressHydrationWarning></div>
 <div animation="right" className="text-color-secondary" suppressHydrationWarning>
-                    Whether you’re optimizing today or building for tomorrow  we
-                    help you move faster with confidence.
+                    Whether you're looking for productivity hacks or just trying to reach inbox zero, we've got you covered.
                   </div>
 </div>
 <div animation="right" className="button_portrait" suppressHydrationWarning>
@@ -38,7 +37,7 @@ export default function Blog() {
 <div className="blog_card-content" suppressHydrationWarning>
 <div className="card-black-gradient" suppressHydrationWarning></div>
 <h3 className="text-xl text-color-on-primary relative" suppressHydrationWarning>
-                          Turning Data into Strategy: The Power of Analytics
+                          How to Reach Inbox Zero with Simple Forwarding
                         </h3>
 </div></a>
 </div>
@@ -53,7 +52,7 @@ export default function Blog() {
 <div className="blog_card-content" suppressHydrationWarning>
 <div className="card-black-gradient" suppressHydrationWarning></div>
 <h3 className="text-xl text-color-on-primary relative" suppressHydrationWarning>
-                          5 Ways AI Can Streamline Business Operations
+                          5 Hidden Benefits of a Clutter-Free Inbox
                         </h3>
 </div></a>
 </div>
@@ -68,7 +67,7 @@ export default function Blog() {
 <div className="blog_card-content" suppressHydrationWarning>
 <div className="card-black-gradient" suppressHydrationWarning></div>
 <h3 className="text-xl text-color-on-primary relative" suppressHydrationWarning>
-                          Human + Machine: Finding the Perfect Balance
+                          Why You Should Stop Clicking Unsubscribe and Forward Instead
                         </h3>
 </div></a>
 </div>

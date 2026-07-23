@@ -1,0 +1,62 @@
+UNSUB BACKEND — DEPLOYMENT STEPS
+==================================
+
+
+DEPLOY TO RENDER.COM 
+---------------------
+
+1. Go to render.com → New → Web Service
+   Connect your GitHub repo, set Root Directory to: backend
+
+2. IMPORTANT: In the "Environment" setting on Render, select "Docker" (NOT Python).
+   (Render's default Python environment does not support Playwright's system dependencies. The provided Dockerfile handles this automatically).
+
+3. Add these Environment Variables in Render dashboard:
+
+   NEXT_PUBLIC_SUPABASE_URL              = https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  = your_supabase_key
+   FLASK_SECRET_KEY                      = (run: python -c "import secrets; print(secrets.token_hex(32))")
+   GOOGLE_CREDENTIALS                    = (paste full contents of credentials.json)
+   FRONTEND_URL                          = https://your-frontend.vercel.app
+   GEMINI_API_KEY                        = (optional — enables AI fallback)
+
+5. Click Deploy. First deploy takes a few minutes (downloads Chromium ~300MB).
+
+6. After deploy — authorize the admin Gmail account:
+   Visit: https://your-backend.onrender.com/authorize?mode=signin
+   Complete the Google OAuth flow with the admin account.
+   (This saves the token to Supabase so it survives restarts.)
+
+7. Verify it's running:
+   GET https://your-backend.onrender.com/
+   Should return: {"status": "ok", ...}
+
+   GET https://your-backend.onrender.com/api/auto-status
+   Should return: {"running": true, ...}
+
+
+IMPORTANT NOTES
+----------------
+
+- Always use --workers 1. The background scheduler runs in-memory
+  and breaks with multiple workers.
+
+- If you redeploy and the admin token is lost, just repeat step 6.
+
+- Make sure your OAuth callback URL is registered in Google Cloud Console:
+  https://your-backend.onrender.com/oauth2callback
+
+- For CORS (if frontend and backend are on different domains), add to app.py:
+  pip install flask-cors
+  from flask_cors import CORS
+  CORS(app, origins=["https://your-frontend.vercel.app"], supports_credentials=True)
+
+
+LOCAL DEV (quick reference)
+----------------------------
+
+  python -m venv venv
+  venv\Scripts\activate          (Windows)
+  pip install -r requirements.txt
+  playwright install chromium
+  python app.py                  (runs on http://localhost:5000)

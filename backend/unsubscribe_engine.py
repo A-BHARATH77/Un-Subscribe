@@ -258,35 +258,45 @@ def _get_label_text(page, element) -> str:
 
 
 def _safe_click(el):
+    page = getattr(el, "page", None)
+    if page and hasattr(page, "_push_frame"): page._push_frame()
     try:
         el.scroll_into_view_if_needed(timeout=2000)
     except Exception:
         pass
+    if page and hasattr(page, "_push_frame"): page._push_frame()
     try:
         el.click(timeout=ELEMENT_TIMEOUT)
+        if page and hasattr(page, "_push_frame"): page.wait_for_timeout(300)
         return True
     except Exception:
         try:
             el.evaluate("el => el.click()")
+            if page and hasattr(page, "_push_frame"): page.wait_for_timeout(300)
             return True
         except Exception:
             return False
 
 
 def _safe_check(el, action="check"):
+    page = getattr(el, "page", None)
+    if page and hasattr(page, "_push_frame"): page._push_frame()
     try:
         el.scroll_into_view_if_needed(timeout=2000)
     except Exception:
         pass
+    if page and hasattr(page, "_push_frame"): page._push_frame()
     try:
         if action == "check":
             el.check(timeout=ELEMENT_TIMEOUT)
         else:
             el.uncheck(timeout=ELEMENT_TIMEOUT)
+        if page and hasattr(page, "_push_frame"): page.wait_for_timeout(300)
         return True
     except Exception:
         try:
             el.click(timeout=ELEMENT_TIMEOUT)
+            if page and hasattr(page, "_push_frame"): page.wait_for_timeout(300)
             return True
         except Exception:
             return False
@@ -812,6 +822,7 @@ def run(
     html_body: str,
     list_unsubscribe_header: Optional[str] = None,
     user_email: str = "",
+    frame_callback=None,
 ) -> dict:
     """
     Main unsubscribe automation function.
@@ -865,6 +876,29 @@ def run(
                 extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
             )
             page = context.new_page()
+
+            def _push_frame():
+                if frame_callback:
+                    try:
+                        frame_callback(page.screenshot(type="jpeg", quality=30))
+                    except Exception:
+                        pass
+            page._push_frame = _push_frame
+
+            # Monkey-patch wait_for_timeout to stream frames
+            original_wait = page.wait_for_timeout
+            def _wait_and_push(duration_ms):
+                if not frame_callback:
+                    original_wait(duration_ms)
+                    return
+                elapsed = 0
+                step = 500
+                while elapsed < duration_ms:
+                    _push_frame()
+                    original_wait(min(step, duration_ms - elapsed))
+                    elapsed += step
+            page.wait_for_timeout = _wait_and_push
+
 
             # Navigate
             try:

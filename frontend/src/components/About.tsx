@@ -9,24 +9,24 @@ export default function About() {
 <div className="vertical-center" suppressHydrationWarning>
 <div animation="scroll" className="tag" data-wf--tag-section--variant="base" suppressHydrationWarning>
 <div className="dot-square" suppressHydrationWarning></div>
-<div suppressHydrationWarning>About us</div>
+<div suppressHydrationWarning>Why Unsub</div>
 </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div animation="scroll" className="max-width-medium is-41rem" suppressHydrationWarning>
 <div animation="title" className="title-wrap" suppressHydrationWarning>
-<h2 suppressHydrationWarning>A</h2>
-<h2 suppressHydrationWarning>global</h2>
-<h2 suppressHydrationWarning>consulting</h2>
-<h2 suppressHydrationWarning>partner</h2>
-<h2 suppressHydrationWarning>dedicated</h2>
+<h2 suppressHydrationWarning>The</h2>
+<h2 suppressHydrationWarning>easiest</h2>
+<h2 suppressHydrationWarning>way</h2>
 <h2 suppressHydrationWarning>to</h2>
-<h2 suppressHydrationWarning>building</h2>
+<h2 suppressHydrationWarning>permanently</h2>
+<h2 suppressHydrationWarning>clean</h2>
+<h2 suppressHydrationWarning>your</h2>
 <img alt="" className="title-icon" loading="lazy" src="https://cdn.prod.website-files.com/6929c116366a14507fc8424d/69a8b414d6ce72030aa90514_icon1.svg" title-icon="" suppressHydrationWarning />
-<h2 suppressHydrationWarning>smarter</h2>
-<h2 className="opacity-50" suppressHydrationWarning>and</h2>
+<h2 suppressHydrationWarning>inbox</h2>
+<h2 className="opacity-50" suppressHydrationWarning>without</h2>
 <img alt="" className="title-icon" loading="lazy" src="https://cdn.prod.website-files.com/6929c116366a14507fc8424d/69a8b414217a32d2ca851e82_icon2.svg" title-icon="" suppressHydrationWarning />
-<h2 className="opacity-50" suppressHydrationWarning>more</h2>
-<h2 className="opacity-50" suppressHydrationWarning>adaptive</h2>
+<h2 className="opacity-50" suppressHydrationWarning>any</h2>
+<h2 className="opacity-50" suppressHydrationWarning>effort</h2>
 </div>
 </div>
 </div>
@@ -52,8 +52,7 @@ export default function About() {
 </div>
 <div className="spacer-small" suppressHydrationWarning></div>
 <div className="text-weight-medium" suppressHydrationWarning>
-                        Collaborating with leading AI and cloud technology
-                        providers.
+                        Newsletters and services successfully unsubscribed from daily.
                       </div>
 </div>
 </div>
@@ -61,7 +60,7 @@ export default function About() {
 <div animation="opacity" className="card_about bg-subtle" id="w-node-_801b3f2a-5370-31ce-ed59-0613b9acb337-7fc84240" suppressHydrationWarning>
 <div suppressHydrationWarning>
 <div className="text-weight-medium" suppressHydrationWarning>
-                      Commitment to measurable
+                      Success rate in removing unwanted emails
                     </div>
 <div className="spacer-small" suppressHydrationWarning></div>
 <div className="text-wrap" suppressHydrationWarning>
@@ -88,15 +87,14 @@ export default function About() {
 </div>
 <div className="spacer-small" suppressHydrationWarning></div>
 <div className="text-base text-weight-medium" suppressHydrationWarning>
-                      “Their automation strategy completely reshaped how we
-                      work. It’s efficient, intelligent, and seamless.”
+                      “Their forwarding strategy completely reshaped how I manage my email. It’s efficient, intelligent, and seamless.”
                     </div>
 </div>
 </div>
 <div animation="opacity" className="card_about bg-green height-100" suppressHydrationWarning>
 <div className="vertical-space-between" suppressHydrationWarning>
 <div suppressHydrationWarning>
-<div className="text-weight-medium" suppressHydrationWarning>Data Points</div>
+<div className="text-weight-medium" suppressHydrationWarning>Time Saved</div>
 <div className="spacer-small" suppressHydrationWarning></div>
 <div className="text-wrap" suppressHydrationWarning>
 <div className="text-4xl" fs-numbercount-duration="3000" fs-numbercount-element="number" fs-numbercount-end="520" fs-numbercount-start="0" suppressHydrationWarning>
@@ -106,14 +104,14 @@ export default function About() {
 </div>
 </div>
 <div className="text-base text-weight-medium" suppressHydrationWarning>
-                      Analyzed monthly to power smarter business strategies.
+                      Hours saved monthly by users avoiding manual unsubscribes.
                     </div>
 </div>
 </div>
 <div animation="opacity" className="card_about bg-black" suppressHydrationWarning>
 <div className="card_4-content" suppressHydrationWarning>
 <div className="text-weight-medium text-color-on-primary" suppressHydrationWarning>
-                      Continents
+                      Providers Supported
                     </div>
 <div className="text-wrap text-color-on-primary" suppressHydrationWarning>
 <div className="text-4xl" fs-numbercount-duration="2000" fs-numbercount-element="number" fs-numbercount-end="20" fs-numbercount-start="0" suppressHydrationWarning>

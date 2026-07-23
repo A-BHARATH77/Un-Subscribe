@@ -47,6 +47,38 @@ logging.getLogger("unsubscribe_engine").setLevel(logging.INFO)
 
 app = Flask(__name__)
 
+# ── Live Stream State ────────────────────────────────────────────────────────
+_stream_state = {
+    "frame": b"",
+    "viewers": 0,
+    "lock": threading.Lock()
+}
+
+def set_frame(frame_bytes):
+    with _stream_state["lock"]:
+        _stream_state["frame"] = frame_bytes
+
+@app.route("/api/stream-browser")
+def stream_browser():
+    def generate():
+        with _stream_state["lock"]:
+            _stream_state["viewers"] += 1
+        try:
+            while True:
+                with _stream_state["lock"]:
+                    frame = _stream_state["frame"]
+                if frame:
+                    yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+                time.sleep(0.5)
+        finally:
+            with _stream_state["lock"]:
+                _stream_state["viewers"] -= 1
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
+
 # ── Supabase config ───────────────────────────────────────────────────────────
 # Read from environment (set in .env or shell). The publishable key is safe to
 # use server-side for inserting rows via the REST API.
@@ -499,7 +531,7 @@ def oauth2callback():
                 # scheduler ALWAYS uses the admin inbox, never a regular user's.
                 save_token(creds_dict)
                 logger.info("[Auth] Admin token saved to token.json for scheduler.")
-                redirect_path = "/inbox"
+                redirect_path = "/admin-dashboard"
             else:
                 # Regular users: credentials live in session only — never touch token.json.
                 redirect_path = f"/dashboard?_e={user_email}"
@@ -545,7 +577,7 @@ def api_admin_logs():
     try:
         resp = http_requests.get(
             f"{SUPABASE_URL}/rest/v1/unsubscribe_logs",
-            params={"select": "*", "order": "created_at.desc", "limit": "200"},
+            params={"select": "*", "order": "created_at.desc", "limit": "5000"},
             headers={
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -665,12 +697,10 @@ def api_get_email(msg_id):
 
 @app.route("/api/unread-ids")
 def api_unread_ids():
-    """Return a list of unread INBOX message IDs from the admin's inbox.
-    Always uses the saved admin token — independent of the logged-in session.
-    """
-    service = _build_service_from_token()
+    """Return a list of unread INBOX message IDs from the authenticated user's inbox."""
+    service = get_gmail_service()
     if service is None:
-        return jsonify({"error": "Admin token not configured — please authorise the admin account first."}), 401
+        return jsonify({"error": "Not authenticated"}), 401
     try:
         result = service.users().messages().list(
             userId="me", labelIds=["INBOX", "UNREAD"], maxResults=50
@@ -958,7 +988,9 @@ def api_unsubscribe_single(msg_id):
     try:
         html_body, list_unsub = _get_email_full(service, msg_id)
         admin_email = _get_user_email(service)   # always the admin's address
-        result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email)
+        
+        cb = set_frame if _stream_state["viewers"] > 0 else None
+        result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email, frame_callback=cb)
 
         # Mark as read on success; always store the result in DB
         marked_read = False
@@ -1037,7 +1069,8 @@ def api_unsubscribe_all():
             result = {"status": "error", "method": None, "reason": "Unknown", "url": None, "error": None}
             try:
                 html_body, list_unsub = _get_email_full(service, msg_id)
-                result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email)
+                cb = set_frame if _stream_state["viewers"] > 0 else None
+                result = unsubscribe_engine.run(html_body, list_unsub, user_email=admin_email, frame_callback=cb)
             except Exception as exc:
                 result = {
                     "status": "error", "method": None,
@@ -1176,7 +1209,6 @@ def _run_auto_cycle():
     if not new_ids:
         logger.info("[AutoUnsub] No new unread emails — inbox clean.")
         with _auto_state_lock:
-            _auto_state["last_results"] = []
             _auto_state["cycle_count"] += 1
             _auto_state["last_run"] = datetime.now().isoformat()
         return
@@ -1189,7 +1221,7 @@ def _run_auto_cycle():
     except Exception:
         pass
 
-    cycle_results = []
+
     for msg_id in new_ids:
         # Fetch subject / sender for logging
         subject = "(unknown)"
@@ -1212,7 +1244,8 @@ def _run_auto_cycle():
         result = {"status": "error", "method": None, "reason": "Unknown", "url": None}
         try:
             html_body, list_unsub = _get_email_full(service, msg_id)
-            result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email)
+            cb = set_frame if _stream_state["viewers"] > 0 else None
+            result = unsubscribe_engine.run(html_body, list_unsub, user_email=user_email, frame_callback=cb)
         except Exception as exc:
             result = {"status": "error", "method": None, "reason": str(exc), "url": None}
 
@@ -1221,25 +1254,25 @@ def _run_auto_cycle():
         # Store the result in DB for every processed email
         _store_result_in_db(service, msg_id, result)
 
-        # Mark this ID as processed regardless of outcome so we don't retry endlessly
         with _auto_state_lock:
             _auto_state["processed_ids"].add(msg_id)
+            _auto_state["last_results"].append({
+                "msg_id":  msg_id,
+                "sender":  sender,
+                "subject": subject,
+                "status":  result.get("status"),
+                "method":  result.get("method"),
+                "reason":  result.get("reason"),
+            })
+            if len(_auto_state["last_results"]) > 200:
+                _auto_state["last_results"] = _auto_state["last_results"][-200:]
 
-        cycle_results.append({
-            "msg_id":  msg_id,
-            "sender":  sender,
-            "subject": subject,
-            "status":  result.get("status"),
-            "method":  result.get("method"),
-            "reason":  result.get("reason"),
-        })
         logger.info(
             "[AutoUnsub] %s → status=%s method=%s",
             sender, result.get("status"), result.get("method")
         )
 
     with _auto_state_lock:
-        _auto_state["last_results"] = cycle_results
         _auto_state["cycle_count"] += 1
         _auto_state["last_run"] = datetime.now().isoformat()
 

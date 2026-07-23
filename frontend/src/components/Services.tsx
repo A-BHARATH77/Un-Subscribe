@@ -9,25 +9,24 @@ export default function Services() {
 <div className="vertical-center" suppressHydrationWarning>
 <div animation="scroll" className="tag" data-wf--tag-section--variant="base" suppressHydrationWarning>
 <div className="dot-square" suppressHydrationWarning></div>
-<div suppressHydrationWarning>Services</div>
+<div suppressHydrationWarning>Features</div>
 </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="max-width-medium is-41rem" suppressHydrationWarning>
 <h2 animation="scroll" className="text-align-center" suppressHydrationWarning>
-                    Comprehensive consulting and intelligent innovation
+                    Automated unsubscribing and intelligent inbox cleanup
                   </h2>
 </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="max-width-medium" suppressHydrationWarning>
 <div animation="scroll" className="text-base text-align-center text-color-secondary" suppressHydrationWarning>
-                    Whether you’re optimizing today or building for tomorrow  we
-                    help you move faster with confidence.
+                    Whether you’re dealing with daily newsletters or marketing spam, we help you clean your inbox faster with confidence.
                   </div>
 </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <a animation="scroll" className="button-arrow is-black w-inline-block" data-w-id="8c5ec456-1c73-d6c5-99ee-21e82c7c817b" href="/services" suppressHydrationWarning><div className="button-arrow_wrap" suppressHydrationWarning>
 <div className="button-arrow_text" suppressHydrationWarning>
-<div className="text_button" suppressHydrationWarning>Get Started</div>
+<div className="text_button" suppressHydrationWarning>Start Forwarding</div>
 </div>
 <div className="button_container-arrow is-black" suppressHydrationWarning>
 <svg className="icon-1x1-main" fill="none" viewBox="0 0 20 20" width="100%" xmlns="http://www.w3.org/2000/svg" suppressHydrationWarning>
@@ -46,11 +45,10 @@ export default function Services() {
 <img alt="" className="icon-1x1-medium" loading="lazy" src="https://cdn.prod.website-files.com/6929c116366a14507fc84252/698e4863b7c4e4770533722e_mingcute_ai-fill.svg" suppressHydrationWarning />
 </div>
 <div suppressHydrationWarning>
-<h3 className="text-xl" suppressHydrationWarning>AI strategy</h3>
+<h3 className="text-xl" suppressHydrationWarning>Instant cleanup</h3>
 <div className="spacer-xsmall" suppressHydrationWarning></div>
 <div className="text-base text-color-secondary" suppressHydrationWarning>
-                              We help you identify opportunities for AI adoption
-                              and implement the right solutions.
+                              We help you identify unwanted emails and permanently unsubscribe from them effortlessly.
                             </div>
 </div>
 </div>
@@ -71,11 +69,10 @@ export default function Services() {
 <img alt="" className="icon-1x1-medium" loading="lazy" src="https://cdn.prod.website-files.com/6929c116366a14507fc84252/698e4875214fe570673439cb_basil_chart-pie-solid.svg" suppressHydrationWarning />
 </div>
 <div suppressHydrationWarning>
-<h3 className="text-xl" suppressHydrationWarning>Business consulting</h3>
+<h3 className="text-xl" suppressHydrationWarning>Privacy first</h3>
 <div className="spacer-xsmall" suppressHydrationWarning></div>
 <div className="text-base text-color-secondary" suppressHydrationWarning>
-                              We help you identify opportunities for top growth
-                              and implement the right strategies.
+                              No apps to install, no passwords required, and no granting third-party OAuth access.
                             </div>
 </div>
 </div>
@@ -96,11 +93,10 @@ export default function Services() {
 <img alt="" className="icon-1x1-medium" loading="lazy" src="https://cdn.prod.website-files.com/6929c116366a14507fc84252/698e487f52e4cd9da04322e0_ic_round-insert-chart.svg" suppressHydrationWarning />
 </div>
 <div suppressHydrationWarning>
-<h3 className="text-xl" suppressHydrationWarning>Data &amp; insights</h3>
+<h3 className="text-xl" suppressHydrationWarning>Time saving</h3>
 <div className="spacer-xsmall" suppressHydrationWarning></div>
 <div className="text-base text-color-secondary" suppressHydrationWarning>
-                              We help you identify opportunities for Big Data
-                              use and implement the right analytics.
+                              We help you reclaim your inbox, freeing up your time to focus on what truly matters.
                             </div>
 </div>
 </div>

@@ -9,20 +9,18 @@ export default function Expertise() {
 <div className="vertical-center" suppressHydrationWarning>
 <div animation="scroll" className="tag" data-wf--tag-section--variant="base" suppressHydrationWarning>
 <div className="dot-square" suppressHydrationWarning></div>
-<div suppressHydrationWarning>Expertise</div>
+<div suppressHydrationWarning>Why It Matters</div>
 </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="max-width-medium is-41rem" suppressHydrationWarning>
 <h2 animation="scroll" className="text-align-center" suppressHydrationWarning>
-                    Where human insight meets intelligent technology
+                    Where simplicity meets an organized inbox
                   </h2>
 </div>
 <div className="spacer-large" suppressHydrationWarning></div>
 <div className="max-width-medium is-34rem" suppressHydrationWarning>
 <div animation="scroll" className="text-base text-align-center text-color-secondary" suppressHydrationWarning>
-                    We help businesses harness technology not to replace human
-                    creativity, but to amplify it — enabling smarter decisions
-                    and faster.
+                    We help individuals clean their inbox not by installing complex apps, but by simply forwarding emails — keeping it clean and organized.
                   </div>
 </div>
 </div>
@@ -36,7 +34,7 @@ export default function Expertise() {
 <div className="vcard_section" suppressHydrationWarning>
 <div className="vcard_text-group" suppressHydrationWarning>
 <p className="vcard_text-label text-weight-medium" data-anim="fade-up" suppressHydrationWarning>
-                                Monthly expanse
+                                Emails Unsubscribed
                               </p>
 <div className="vcard_amount-wrap" data-anim="fade-up" suppressHydrationWarning>
 <div className="text-wrap" suppressHydrationWarning>
@@ -151,7 +149,7 @@ export default function Expertise() {
                               </div>
 <div className="pcard_text-value" suppressHydrationWarning>+</div>
 </div>
-<p className="pcard_text-muted" suppressHydrationWarning>Monthly expanse</p>
+<p className="pcard_text-muted" suppressHydrationWarning>Emails Unsubscribed</p>
 </div>
 </div>
 </div>
@@ -160,13 +158,11 @@ export default function Expertise() {
 <div className="card-padding-medium" suppressHydrationWarning>
 <div className="vertical-center" suppressHydrationWarning>
 <h3 className="text-xl text-align-center" suppressHydrationWarning>
-                        Automation &amp; optimization
+                        Simple &amp; straightforward
                       </h3>
 <div className="spacer-xsmall" suppressHydrationWarning></div>
 <div className="text-base text-align-center text-color-secondary" suppressHydrationWarning>
-                        Streamline your operations through intelligent workflow
-                        automation that saves time, reduces errors, and boosts
-                        productivity.
+                        Streamline your email management through a simple forwarding mechanism that saves time and reduces clutter.
                       </div>
 </div>
 </div>
@@ -178,8 +174,8 @@ export default function Expertise() {
 <div className="bcard_inner" suppressHydrationWarning>
 <div className="bcard_title-wrap" data-anim="fade-up" suppressHydrationWarning>
 <p className="bcard_text-title" suppressHydrationWarning>
-                              Intelligence in Every Decision
-                            </p>
+                                Efficiency in Every Forward
+                              </p>
 </div>
 <div className="bcard_chart" data-anim="bar-grow" suppressHydrationWarning>
 <div className="bcard_chart-col" suppressHydrationWarning>
@@ -280,7 +276,7 @@ export default function Expertise() {
 </div>
 <div className="gcard_badge" suppressHydrationWarning><p suppressHydrationWarning>+2.5%</p></div>
 </div>
-<p className="gcard_text-sub" suppressHydrationWarning>Business growth</p>
+<p className="gcard_text-sub" suppressHydrationWarning>Inbox cleanliness</p>
 </div>
 <div className="gcard_tags" data-anim="marquee-tags" suppressHydrationWarning>
 <div className="gcard_tags-row" data-anim="marquee-right" suppressHydrationWarning>
@@ -323,9 +319,9 @@ export default function Expertise() {
 <p className="pcard_text-muted" suppressHydrationWarning>+5,000 customers</p>
 </div>
 <div className="scard_text-wrap" data-anim="stagger-text" suppressHydrationWarning>
-<p className="text-muted-40" suppressHydrationWarning>Smart.</p>
-<p className="text-muted-40" suppressHydrationWarning>Simple.</p>
-<p className="ecard_text" suppressHydrationWarning>Strategic.</p>
+<p className="text-muted-40" suppressHydrationWarning>Forward.</p>
+<p className="text-muted-40" suppressHydrationWarning>Forget.</p>
+<p className="ecard_text" suppressHydrationWarning>Done.</p>
 </div>
 </div>
 </div>
@@ -334,13 +330,11 @@ export default function Expertise() {
 <div className="card-padding-medium" suppressHydrationWarning>
 <div className="vertical-center" suppressHydrationWarning>
 <h3 className="text-xl text-align-center" suppressHydrationWarning>
-                        Digital transformation
+                        Email transformation
                       </h3>
 <div className="spacer-xsmall" suppressHydrationWarning></div>
 <div className="text-base text-align-center text-color-secondary" suppressHydrationWarning>
-                        We guide organizations through full-scale digital
-                        evolution — modernizing systems, processes, and
-                        decision-making frameworks.
+                        We guide individuals through full-scale email evolution — decluttering inboxes, organizing newsletters, and saving time.
                       </div>
 </div>
 </div>
@@ -399,13 +393,11 @@ export default function Expertise() {
 <div className="card-padding-medium" suppressHydrationWarning>
 <div className="vertical-center" suppressHydrationWarning>
 <h3 className="text-xl text-align-center" suppressHydrationWarning>
-                        Experience intelligence
+                        Experience freedom
                       </h3>
 <div className="spacer-xsmall" suppressHydrationWarning></div>
 <div className="text-base text-align-center text-color-secondary" suppressHydrationWarning>
-                        Combine data and design to deliver smarter, more
-                        personalized digital experiences that connect with
-                        users.
+                        Combine a simple forward with an automated system to deliver a cleaner, more organized digital experience.
                       </div>
 </div>
 </div>
