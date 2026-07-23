@@ -851,19 +851,56 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
         #    (from_raw / to_raw) are already correct and must not be overwritten
         #    by false-positive regex matches inside newsletter HTML.
         try:
+            import html as _html_mod
             from bs4 import BeautifulSoup
             from email.utils import parseaddr as _parseaddr
+
             html_content = decode_body(payload_data)
 
-            # --- Detect a forwarded-message block in the RAW HTML first ---
-            # We only look for the marker line itself (3+ dashes around
-            # "Forwarded message"). The old approach required 5+ consecutive
-            # <br> tags after the headers as an end-anchor, which Gmail never
-            # produces — it uses exactly one <br> per header line. Instead we
-            # locate the marker and scan a fixed window of HTML after it.
-            raw_fwd_match = re.search(
+            # --- Step 1: strip the HTML first, then detect & search clean text ---
+            # Reason: in production the Gmail API may return the forwarded headers
+            # wrapped in deeply-nested <span>/<div> tags or split across multiple
+            # nodes.  Running regexes on raw HTML is fragile; running them on
+            # plain text is reliable regardless of the server's HTML variant.
+
+            # Unescape HTML entities (&lt; → <, &amp; → &, etc.) before stripping.
+            full_unescaped = _html_mod.unescape(html_content)
+
+            def _to_plain(html_text):
+                """Convert HTML to plain text. Block/break tags become newlines.
+                Angle-bracketed emails (<foo@bar.com>) and mailto: links are
+                preserved so the To: regex can match them."""
+                # block/break → newline so header lines are separated
+                text = re.sub(
+                    r"<br\s*/?>|</(?:p|div|tr|li|td|th|h[1-6]|blockquote)>",
+                    "\n", html_text, flags=re.IGNORECASE,
+                )
+                # Extract mailto: href values before stripping tags.
+                # e.g. <a href="mailto:foo@bar.com">foo@bar.com</a> → foo@bar.com
+                text = re.sub(
+                    r'<a\s[^>]*href=["\']mailto:([^"\'>\s]+)["\'][^>]*>.*?</a>',
+                    r"\1", text, flags=re.IGNORECASE | re.DOTALL,
+                )
+                # PROTECT bare angle-bracketed email addresses so the generic
+                # tag-stripper below does not mistake them for HTML tags.
+                # <foo@bar.com> → @@foo@bar.com@@
+                text = re.sub(r"<([^<>\s]+@[^<>\s]+)>", r"@@\1@@", text)
+                # Strip all remaining HTML tags.
+                text = re.sub(r"<[^>]+>", "", text)
+                # RESTORE protected addresses back to <foo@bar.com>.
+                text = re.sub(r"@@([^@\s]+@[^@\s]+)@@", r"<\1>", text)
+                # Collapse trailing whitespace per line.
+                lines = [l.rstrip() for l in text.splitlines()]
+                return "\n".join(lines)
+
+
+            plain_content = _to_plain(full_unescaped)
+
+            # --- Step 2: locate the forwarded-message marker in the plain text ---
+            # Any variant of "---------- Forwarded message ---------" is matched.
+            fwd_marker = re.search(
                 r"-{3,}\s*Forwarded message\s*-{3,}",
-                html_content,
+                plain_content,
                 re.IGNORECASE,
             )
 
@@ -871,67 +908,39 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
             # block.  Applying these regex patterns to the entire newsletter body
             # causes false positives (e.g. "to unsubscribe" matches "To:") that
             # result in an empty or wrong to_raw → empty sender_email in the DB.
-            if raw_fwd_match:
-                # Grab up to 3000 chars of HTML after the marker — that window
-                # always contains the From/Date/Subject/To header lines.
-                raw_block = html_content[raw_fwd_match.end():raw_fwd_match.end() + 3000]
+            if fwd_marker:
+                # Take everything after the marker — no arbitrary char limit.
+                # The forwarded headers (From/Date/Subject/To) are always the
+                # first few lines; restricting to 3000 chars caused the To: field
+                # to be cut off on some production emails.
+                fwd_block = plain_content[fwd_marker.end():]
 
-                # Strip inline HTML tags from the raw block (e.g. <b>, <span>)
-                # but preserve angle-bracketed email addresses by temporarily
-                # replacing < and > that wrap an email address.
-                import html as _html_mod
-                # Unescape HTML entities first (e.g. &lt; → <)
-                raw_block_unescaped = _html_mod.unescape(raw_block)
-
-                def _strip_html_tags(text):
-                    """Remove HTML tags but preserve <email@address> patterns.
-                    Block-level tags and <br> are converted to newlines first so
-                    that From:/To: lines are properly terminated."""
-                    # Convert line-break / block tags → newline so each header
-                    # field ends up on its own line
-                    text = re.sub(r"<br\s*/?>|</(?:p|div|tr|li|h[1-6]|blockquote)>",
-                                  "\n", text, flags=re.IGNORECASE)
-                    # Temporarily protect email addresses in angle brackets
-                    protected = re.sub(
-                        r"<([^<>\s]+@[^<>\s]+)>",
-                        r"[\1]",
-                        text,
-                    )
-                    # Strip remaining HTML tags
-                    clean = re.sub(r"<[^>]+>", "", protected)
-                    # Restore protected email addresses
-                    clean = re.sub(r"\[([^\[\]]+@[^\[\]]+)\]", r"<\1>", clean)
-                    return clean
-
-                raw_block_clean = _strip_html_tags(raw_block_unescaped)
-
-                # Match "From: Priceline <email@deals.priceline.com>"
-                fwd_from_match = re.search(r"From:\s*(.+?)(?:\r?\n|$)", raw_block_clean, re.IGNORECASE)
+                # Match "From: Priceline <email@deals.priceline.com>" (unchanged)
+                fwd_from_match = re.search(
+                    r"From:\s*(.+?)(?:\r?\n|$)", fwd_block, re.IGNORECASE,
+                )
                 if fwd_from_match:
                     from_raw = fwd_from_match.group(1).strip()
 
-                # Match "To: <bkalai2328@gmail.com>"
-                fwd_to_match = re.search(r"To:\s*(.+?)(?:\r?\n|$)", raw_block_clean, re.IGNORECASE)
+                # Robust To: extraction — handles all real-world variants:
+                #   To: bharatharavindhan04@gmail.com
+                #   To: <bharatharavindhan04@gmail.com>
+                #   To:\n<bharatharavindhan04@gmail.com>   (value on next line)
+                #   (HTML tags are already stripped by _to_plain above)
+                #
+                # We only scan the first 500 chars of fwd_block (the header
+                # section). NOT using re.DOTALL — that let \s* leap across the
+                # entire body and match an unrelated address in the newsletter.
+                # \s here only matches spaces/tabs, and [\r\n]? allows a single
+                # optional newline between "To:" and the address.
+                header_section = fwd_block[:500]
+                fwd_to_match = re.search(
+                    r"To:[ \t]*[\r\n]?[ \t]*<?([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})>?",
+                    header_section,
+                    re.IGNORECASE,
+                )
                 if fwd_to_match:
-                    to_raw = fwd_to_match.group(1).strip()
-
-                # If we still didn't find To: in raw HTML, fall back to plain-text
-                # extraction (but use a regex that can capture bare email addresses too)
-                if not to_raw:
-                    text_content = BeautifulSoup(html_content, "html.parser").get_text(separator="\n")
-                    fwd_block_text = re.search(
-                        r"-{3,}\s*Forwarded message\s*-{3,}(.+)",
-                        text_content,
-                        re.IGNORECASE | re.DOTALL,
-                    )
-                    block = fwd_block_text.group(1) if fwd_block_text else ""
-                    fwd_to_text = re.search(
-                        r"To:\s*([\w._%+\-]+@[\w.\-]+\.[a-zA-Z]{2,})",
-                        block,
-                        re.IGNORECASE,
-                    )
-                    if fwd_to_text:
-                        to_raw = fwd_to_text.group(1).strip()
+                    to_raw = fwd_to_match.group(1).strip().strip("<>")
 
         except Exception as e:
             logger.warning("[DB] Failed to parse forwarded body: %s", e)
