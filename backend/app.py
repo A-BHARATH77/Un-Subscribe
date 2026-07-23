@@ -1343,8 +1343,10 @@ def api_auto_status():
         })
 
 
+# Start the background scheduler automatically when the server boots.
+# Because Render uses Gunicorn, this must be outside the __main__ block.
+# (Make sure to always run Gunicorn with --workers 1)
+start_auto_scheduler()
+
 if __name__ == "__main__":
-    # Start the background scheduler automatically when the server boots.
-    # It will check for unread emails immediately, then every 2 minutes.
-    start_auto_scheduler()
     app.run(debug=True, port=5000, use_reloader=False)
