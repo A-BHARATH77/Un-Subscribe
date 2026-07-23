@@ -837,10 +837,12 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
 
         from_raw = ""
         to_raw = ""
-        # 1. Fallback to normal headers first
+        outer_from_raw = ""   # outer From: header = the forwarder's / sender's email
+        # 1. Read normal email headers first
         for h in payload_data.get("headers", []):
             if h["name"].lower() == "from":
                 from_raw = h["value"]
+                outer_from_raw = from_raw   # save BEFORE forwarded-block may overwrite it
             elif h["name"].lower() == "to":
                 to_raw = h["value"]
                 
@@ -960,6 +962,18 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
         _to_name, to_email = parseaddr(to_raw)
         # Strip any stray angle brackets in case parseaddr missed them
         to_email = to_email.strip("<>").strip()
+
+        # Fallback: many bulk newsletters omit the To: header entirely (BCC delivery)
+        # or set it to "undisclosed-recipients:;" — in those cases to_email is empty.
+        # The outer From: header is always the person who forwarded/sent the email
+        # to the admin, which is the user whose subscription is being cancelled.
+        if not to_email and outer_from_raw:
+            _, to_email = parseaddr(outer_from_raw)
+            to_email = to_email.strip("<>").strip()
+            logger.info("[DB] sender_email from outer From: fallback → %s", to_email)
+
+        logger.debug("[DB] from_raw=%r  to_raw=%r  outer_from_raw=%r  → to_email=%r",
+                     from_raw, to_raw, outer_from_raw, to_email)
 
         payload = {
             "organization_name": org_name,
