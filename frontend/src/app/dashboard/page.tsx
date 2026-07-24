@@ -47,7 +47,6 @@ function DashboardContent() {
   const [logsLoading, setLogsLoading] = useState(true);
   const [logsError, setLogsError] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState('yellow');
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [chartFilter, setChartFilter] = useState<'hourly'|'day'|'week'|'month'>('day');
   const [hoveredPoint, setHoveredPoint] = useState<{x: number, y: number, display: string, count: number} | null>(null);
@@ -149,54 +148,13 @@ function DashboardContent() {
     setChatMsgs(prev => [...prev, logToUserReply(log)]);
   }
 
-  useEffect(() => {
-    const saved = localStorage.getItem('unsub_theme');
-    if (saved) setTheme(saved);
-  }, []);
-
-  const changeTheme = (t: string) => {
-    setTheme(t);
-    localStorage.setItem('unsub_theme', t);
+  const activeTheme = {
+    bg1: '#e3f1fb', bg2: '#8abce4', bg3: '#7eb3df',
+    l1: '#ffffff', l2: '#e3f1fb', l3: '#8abce4', l4: '#7eb3df', l5: '#438fcb',
+    bl1: 'rgba(255,255,255,0.6)', bl2: 'rgba(138,188,228,0.7)',
+    primary: '#438fcb', primarySub: '#8abce4', primaryDark: '#296b9e',
+    primaryLight: 'rgba(67,143,203,0.18)', primaryHover: 'rgba(67,143,203,0.05)'
   };
-
-  const THEMES: Record<string, any> = {
-    yellow: {
-      bg1: '#fefce8', bg2: '#fde68a', bg3: '#fef9c3',
-      l1: '#fffdf5', l2: '#fffbeb', l3: '#fef3c7', l4: '#fde68a', l5: '#fbbf24',
-      bl1: 'rgba(254,252,232,0.3)', bl2: 'rgba(253,230,138,0.45)',
-      primary: '#fbbf24', primarySub: '#f59e0b', primaryDark: '#d97706',
-      primaryLight: 'rgba(251,191,36,0.18)', primaryHover: 'rgba(251,191,36,0.05)'
-    },
-    red: {
-      bg1: '#fef2f2', bg2: '#fca5a5', bg3: '#fee2e2',
-      l1: '#fffafa', l2: '#fef2f2', l3: '#fecaca', l4: '#fca5a5', l5: '#f87171',
-      bl1: 'rgba(254,242,242,0.3)', bl2: 'rgba(252,165,165,0.45)',
-      primary: '#f87171', primarySub: '#ef4444', primaryDark: '#dc2626',
-      primaryLight: 'rgba(248,113,113,0.18)', primaryHover: 'rgba(248,113,113,0.05)'
-    },
-    green: {
-      bg1: '#f0fdf4', bg2: '#86efac', bg3: '#dcfce7',
-      l1: '#f7fcf8', l2: '#f0fdf4', l3: '#bbf7d0', l4: '#86efac', l5: '#4ade80',
-      bl1: 'rgba(240,253,244,0.3)', bl2: 'rgba(134,239,172,0.45)',
-      primary: '#4ade80', primarySub: '#22c55e', primaryDark: '#16a34a',
-      primaryLight: 'rgba(74,222,128,0.18)', primaryHover: 'rgba(74,222,128,0.05)'
-    },
-    blue: {
-      bg1: '#eff6ff', bg2: '#93c5fd', bg3: '#dbeafe',
-      l1: '#f8faff', l2: '#eff6ff', l3: '#bfdbfe', l4: '#93c5fd', l5: '#60a5fa',
-      bl1: 'rgba(239,246,255,0.3)', bl2: 'rgba(147,197,253,0.45)',
-      primary: '#60a5fa', primarySub: '#3b82f6', primaryDark: '#2563eb',
-      primaryLight: 'rgba(96,165,250,0.18)', primaryHover: 'rgba(96,165,250,0.05)'
-    },
-    violet: {
-      bg1: '#f5f3ff', bg2: '#c4b5fd', bg3: '#ede9fe',
-      l1: '#fcfbfe', l2: '#f5f3ff', l3: '#ddd6fe', l4: '#c4b5fd', l5: '#a78bfa',
-      bl1: 'rgba(245,243,255,0.3)', bl2: 'rgba(196,181,253,0.45)',
-      primary: '#a78bfa', primarySub: '#8b5cf6', primaryDark: '#7c3aed',
-      primaryLight: 'rgba(167,139,250,0.18)', primaryHover: 'rgba(167,139,250,0.05)'
-    }
-  };
-  const activeTheme = THEMES[theme] || THEMES.yellow;
 
   useEffect(() => {
     const urlEmail = searchParams.get('_e');
@@ -647,42 +605,58 @@ function DashboardContent() {
           --primary-dark: ${activeTheme.primaryDark};
           --primary-light: ${activeTheme.primaryLight};
           --primary-hover: ${activeTheme.primaryHover};
-          --primary-text: ${theme === 'yellow' ? '#1a1a1a' : '#fff'};
+          --primary-text: #fff;
 
           min-height: 100vh;
-          background:
-            radial-gradient(ellipse 80% 55% at 90% 0%,   var(--bg2) 0%, transparent 55%),
-            radial-gradient(ellipse 60% 65% at 100% 0%,  var(--bg1) 0%, transparent 50%),
-            radial-gradient(ellipse 70% 50% at 5%  95%,  var(--bg3) 0%, transparent 60%),
-            linear-gradient(155deg, var(--l1) 0%, var(--l2) 25%, var(--l3) 55%, var(--l4) 80%, var(--l5) 100%);
+          background: 
+            radial-gradient(circle at 10% 90%, #438fcb 0%, transparent 40%),
+            radial-gradient(circle at 90% 10%, #7eb3df 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, #e0f2fe 0%, #a2cff0 50%, #76b1e0 100%);
+          background-color: #8abce4;
           position: relative;
+          overflow: hidden;
         }
 
-        /* Warm ambient blooms */
-        .db-bloom { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; }
-        .db-bloom-1 {
-          width: 900px; height: 700px;
-          top: -200px; right: -180px;
-          background: radial-gradient(ellipse, rgba(255,255,255,0.8) 0%, var(--bl1) 40%, transparent 70%);
-          filter: blur(50px);
+        /* Moving Clouds */
+        .db-clouds {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: 0;
         }
-        .db-bloom-2 {
-          width: 600px; height: 500px;
-          bottom: -120px; left: -80px;
-          background: radial-gradient(ellipse, var(--bl2) 0%, var(--bg3) 50%, transparent 75%);
-          filter: blur(60px);
-          animation: blobDrift 18s ease-in-out infinite reverse;
+        .css-cloud {
+          position: absolute;
+          background: #fff;
+          border-radius: 200px;
+          opacity: 0.7;
+          filter: blur(14px);
         }
-        .db-bloom-3 {
-          width: 350px; height: 350px;
-          top: 40%; left: 30%;
-          background: radial-gradient(ellipse, var(--primary-light) 0%, transparent 70%);
-          filter: blur(80px);
-          animation: blobDrift 22s ease-in-out infinite;
+        .css-cloud::before, .css-cloud::after {
+          content: '';
+          position: absolute;
+          background: #fff;
+          border-radius: 50%;
         }
-        @keyframes blobDrift {
-          0%,100% { transform: translateY(0) scale(1); }
-          50%      { transform: translateY(-24px) scale(1.04); }
+        .css-cloud::before {
+          width: 50%; height: 150%;
+          top: -70%; left: 15%;
+        }
+        .css-cloud::after {
+          width: 40%; height: 120%;
+          top: -50%; right: 15%;
+        }
+
+        .cloud-1 { width: 400px; height: 120px; top: 15%; left: -400px; opacity: 0.8; animation: floatCloud 50s linear infinite; }
+        .cloud-2 { width: 550px; height: 160px; top: 45%; left: -600px; opacity: 0.6; animation: floatCloud 75s linear infinite 15s; }
+        .cloud-3 { width: 350px; height: 100px; top: 75%; left: -400px; opacity: 0.7; animation: floatCloud 40s linear infinite 5s; }
+        .cloud-4 { width: 600px; height: 180px; top: 5%; left: -600px; opacity: 0.45; animation: floatCloud 90s linear infinite 30s; }
+        .cloud-5 { width: 450px; height: 140px; top: 60%; left: -500px; opacity: 0.65; animation: floatCloud 65s linear infinite 25s; }
+
+        @keyframes floatCloud {
+          0% { transform: translateX(0) scale(1); }
+          50% { transform: translateX(50vw) scale(1.05); }
+          100% { transform: translateX(calc(100vw + 1000px)) scale(1); }
         }
         @keyframes pulseDot {
           0%, 100% { opacity: 1; transform: scale(1); }
@@ -703,11 +677,14 @@ function DashboardContent() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 28px 40px;
+          padding: 28px 60px;
           background: transparent;
           position: sticky;
           top: 0;
           z-index: 100;
+          max-width: 1600px;
+          margin: 0 auto;
+          width: 100%;
         }
         .db-nav-logo {
           display: flex;
@@ -802,13 +779,13 @@ function DashboardContent() {
         /* ── Main body ── */
         .db-body {
           flex: 1;
-          padding: 36px 40px 60px;
-          max-width: 1440px;
+          padding: 40px 60px 80px;
+          max-width: 1600px;
           margin: 0 auto;
           width: 100%;
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 32px;
         }
 
         /* ── Welcome header ── */
@@ -827,20 +804,25 @@ function DashboardContent() {
           font-weight: 400;
         }
 
-        /* ── Grid layout for cards ── */
-        .db-grid {
+        /* ── Bento Grid layout ── */
+        .db-bento-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 360px));
-          justify-content: center;
-          gap: 20px;
-        }
-
-        .db-charts-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 28px;
           width: 100%;
+          align-items: stretch;
         }
+        
+        .bento-profile { grid-column: span 1; order: 1; }
+        .bento-streak { grid-column: span 1; order: 2; }
+        .bento-unread { grid-column: span 1; order: 3; }
+        .bento-contribution { grid-column: span 1; order: 4; }
+        
+        .bento-pie { grid-column: span 2; order: 5; display: flex; justify-content: center; overflow: hidden; }
+        .bento-calendar { grid-column: span 2; order: 6; }
+        
+        .bento-mails { grid-column: 1 / span 2; order: 7; }
+        .bento-breakdown { grid-column: 4 / span 1; order: 8; }
 
         /* ── Glassmorphism Card base ── */
         .db-card {
@@ -849,14 +831,30 @@ function DashboardContent() {
           -webkit-backdrop-filter: blur(28px);
           border: 1px solid rgba(255,255,255,0.8);
           border-radius: 22px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
           overflow: hidden;
-          transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, background 0.3s;
+          animation: cardFloat 6s ease-in-out infinite;
         }
+        .db-card:nth-child(2n) { animation-delay: 1.5s; }
+        .db-card:nth-child(3n) { animation-delay: 3s; }
+        
         .db-card:hover {
-          transform: translateY(-3px);
-          background: rgba(255,255,255,0.68);
-          box-shadow: 0 10px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+          animation-play-state: paused;
+          transform: translateY(-10px) scale(1.02);
+          background: rgba(255,255,255,0.72);
+          box-shadow: 0 24px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+        }
+
+        @keyframes cardFloat {
+          0%, 100% { 
+            transform: translateY(0); 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+          }
+          50% { 
+            transform: translateY(-6px); 
+            box-shadow: 0 16px 36px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+          }
         }
 
         /* ── Time Saved card ── */
@@ -1455,12 +1453,13 @@ function DashboardContent() {
           opacity: 1; pointer-events: auto;
         }
         .db-overlay-card {
-          background: #fff;
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
           border-radius: 20px;
           padding: 32px 24px;
           width: 90%;
           max-width: 320px;
-          box-shadow: 0 16px 60px rgba(0,0,0,0.12);
+          box-shadow: 0 16px 60px rgba(14, 165, 233, 0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+          border: 1px solid rgba(125, 211, 252, 0.3);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -1476,49 +1475,18 @@ function DashboardContent() {
           position: absolute;
           top: 14px;
           right: 14px;
-          background: rgba(0,0,0,0.05);
+          background: rgba(14, 165, 233, 0.1);
           border: none;
           border-radius: 50%;
           width: 28px; height: 28px;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer;
-          color: #888;
-          transition: background 0.15s;
+          color: #0284c7;
+          transition: all 0.15s;
         }
-        .db-overlay-close:hover { background: rgba(0,0,0,0.1); color: #111; }
+        .db-overlay-close:hover { background: rgba(14, 165, 233, 0.2); color: #0369a1; }
         
-        .db-theme-picker {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
-          margin: 4px 0 14px;
-          width: 100%;
-        }
-        .db-theme-label {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: #bbb;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-        .db-theme-options {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .db-theme-dot {
-          width: 24px; height: 24px;
-          border-radius: 50%;
-          border: 2px solid transparent;
-          cursor: pointer;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .db-theme-dot:hover { transform: scale(1.18); }
-        .db-theme-dot.active {
-          transform: scale(1.18);
-          box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--primary);
-        }
+
 
         .db-overlay-avatar {
           width: 68px; height: 68px;
@@ -1542,9 +1510,9 @@ function DashboardContent() {
         .db-overlay-signout {
           width: 100%;
           padding: 11px;
-          background: rgba(239, 68, 68, 0.07);
-          color: #dc2626;
-          border: 1px solid rgba(239, 68, 68, 0.2);
+          background: rgba(14, 165, 233, 0.1);
+          color: #0284c7;
+          border: 1px solid rgba(14, 165, 233, 0.2);
           border-radius: 12px;
           font-weight: 700;
           font-size: 0.9rem;
@@ -1552,9 +1520,11 @@ function DashboardContent() {
           text-align: center;
           text-decoration: none;
           transition: all 0.15s;
+          margin-top: 8px;
         }
         .db-overlay-signout:hover {
-          background: rgba(239, 68, 68, 0.14);
+          background: rgba(14, 165, 233, 0.2);
+          color: #0369a1;
         }
 
         /* ── Mobile Responsive ── */
@@ -1574,56 +1544,121 @@ function DashboardContent() {
       `}</style>
 
       <div className="db-root">
-        <div className="db-bloom db-bloom-1" />
-        <div className="db-bloom db-bloom-2" />
-        <div className="db-bloom db-bloom-3" />
+        <div className="db-clouds">
+          <div className="css-cloud cloud-1" />
+          <div className="css-cloud cloud-2" />
+          <div className="css-cloud cloud-3" />
+          <div className="css-cloud cloud-4" />
+          <div className="css-cloud cloud-5" />
+        </div>
 
         <div className="db-layout">
 
           {/* ── Top Nav ── */}
-          <nav className="db-nav">
+          <nav className="db-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="db-nav-logo">
               <div className="db-logo-icon" style={{ background: 'transparent' }}>
                 <img src="/email.svg" alt="UnSub" style={{ width: '100%', height: '100%' }} />
               </div>
               UnSub
             </div>
-            {/* The Dashboard link and Right side user controls have been moved/removed as requested */}
+            
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              style={{
+                width: '44px', height: '44px',
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.6)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.8)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#333',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.9)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.6)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              title="Profile"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </button>
           </nav>
 
           {/* ── Body ── */}
           <main className="db-body">
 
             {/* Welcome */}
-            <div className="db-welcome">
-              <h1>Welcome in, {displayName}</h1>
-              <p>Here&apos;s your unsubscribe activity at a glance.</p>
+            <div className="db-welcome" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div>
+                <h1 style={{ margin: 0, marginBottom: '8px' }}>Welcome in, {displayName}</h1>
+                <p style={{ margin: 0 }}>Here&apos;s your unsubscribe activity at a glance.</p>
+              </div>
+
+              {/* Stats Row */}
+              <div style={{ display: 'flex', gap: '48px', alignItems: 'center', paddingRight: '20px' }}>
+                
+                {/* Employe */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', padding: '6px', display: 'flex', color: '#333' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>78</span>
+                  </div>
+                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Employe</span>
+                </div>
+
+                {/* Hirings */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', padding: '6px', display: 'flex', color: '#333' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                    </div>
+                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>56</span>
+                  </div>
+                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Hirings</span>
+                </div>
+
+                {/* Projects */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', padding: '6px', display: 'flex', color: '#333' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="20" x2="22" y2="20"></line></svg>
+                    </div>
+                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>203</span>
+                  </div>
+                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Projects</span>
+                </div>
+
+              </div>
             </div>
 
             {/* ── Card Grid ── */}
-            <div className="db-grid">
+            <div className="db-bento-grid">
 
               {/* Profile Card */}
-              <div className="db-card" style={{ position: 'relative', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', minHeight: '340px', overflow: 'hidden' }}>
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Lora Piterson" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
+              <div className="db-card bento-profile" style={{ position: 'relative', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', minHeight: '340px', overflow: 'hidden' }}>
+                <img src="/client.jpg" alt="Trevor" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
                 
                 {/* Gradient overlay */}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(225, 218, 205, 0.95) 0%, rgba(225, 218, 205, 0.6) 30%, transparent 60%)', zIndex: 1 }}></div>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(67, 143, 203, 0.85) 0%, rgba(67, 143, 203, 0.4) 20%, transparent 45%)', zIndex: 1 }}></div>
                 
                 {/* Content */}
                 <div style={{ position: 'relative', zIndex: 2, padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
                   <div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 600, color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>Lora Piterson</div>
-                    <div style={{ fontSize: '0.9rem', color: '#fff', opacity: 0.9, fontWeight: 500, marginTop: '4px', textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>UX/UI Designer</div>
-                  </div>
-                  <div style={{ padding: '8px 20px', borderRadius: '99px', border: '1px solid rgba(255,255,255,0.7)', color: '#fff', fontSize: '1rem', fontWeight: 500, background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)' }}>
-                    $1,200
+                    <div style={{ fontSize: '1.4rem', fontWeight: 600, color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>Trevor</div>
+                    <div style={{ fontSize: '0.9rem', color: '#fff', opacity: 0.9, fontWeight: 500, marginTop: '4px', textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>Designer</div>
                   </div>
                 </div>
               </div>
 
               {/* Time Saved Clock Card */}
-              <div className="db-card db-clock-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <div className="db-card db-clock-card bento-unread" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '24px', right: '24px', width: '50px', height: '50px', filter: 'invert(0.8)' }}>
                   {clockData && <Lottie animationData={clockData} loop={true} autoplay={true} />}
                 </div>
@@ -1655,13 +1690,13 @@ function DashboardContent() {
                   </div>
                 </div>
                 
-                <div className="db-clock-subtitle" style={{ marginTop: '24px', textAlign: 'center', color: '#888' }}>
+                <div className="db-clock-subtitle" style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.85rem', color: '#888', fontWeight: 600 }}>
                   Approx. time to manually unsubscribe (4m each)
                 </div>
               </div>
 
               {/* Activity / Progress card */}
-              <div className="db-card db-activity-card">
+              <div className="db-card db-activity-card bento-streak">
                 <div style={{ position: 'absolute', top: '16px', right: '16px', width: '60px', height: '60px' }}>
                   {fireData && <Lottie animationData={fireData} loop={true} autoplay={true} />}
                 </div>
@@ -1671,7 +1706,7 @@ function DashboardContent() {
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
                   <span className="db-activity-big-num" style={{ fontSize: '3.4rem', fontWeight: 300, letterSpacing: '-0.04em' }}>{logsLoading ? '—' : totalMailsThisWeek}</span>
-                  <span className="db-activity-big-sub" style={{ fontSize: '0.85rem', color: '#666', lineHeight: 1.3, display: 'flex', flexDirection: 'column' }}>
+                  <span className="db-activity-big-sub" style={{ fontSize: '0.85rem', color: '#888', fontWeight: 600, lineHeight: 1.3, display: 'flex', flexDirection: 'column' }}>
                     <span>Mails sent</span>
                     <span>this week</span>
                   </span>
@@ -1732,11 +1767,9 @@ function DashboardContent() {
 
 
               {/* Right panel moved to overlay */}
-            </div>
 
-            <div className="db-charts-grid">
               {/* Full-width Line Chart */}
-              <div className="db-card db-chart-card">
+              <div className="db-card db-chart-card bento-mails" style={{ gridColumn: '1 / span 2', order: 7 }}>
                 <div className="db-chart-header">
                   <span className="db-chart-title">Mails Sent</span>
                   <div className="db-chart-filters">
@@ -1825,72 +1858,64 @@ function DashboardContent() {
 
 
               {/* Calendar Component (replacing Results Breakdown) */}
-              <div className="db-card" style={{ padding: '30px', display: 'flex', flexDirection: 'column' }}>
+              <div className="db-card bento-calendar" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '40px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
                   <div style={{ fontSize: '1.2rem', fontWeight: 500, color: '#1a1a1a' }}>September 2024</div>
                 </div>
 
                 {/* Grid */}
-                <div style={{ display: 'flex', position: 'relative', height: '280px' }}>
-                  {/* Y-Axis */}
-                  <div style={{ display: 'flex', flexDirection: 'column', width: '80px', color: '#555', fontSize: '0.9rem', fontWeight: 500, position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '72px' }}>8:00 am</div>
-                    <div style={{ position: 'absolute', top: '132px' }}>9:00 am</div>
-                    <div style={{ position: 'absolute', top: '192px' }}>10:00 am</div>
-                    <div style={{ position: 'absolute', top: '252px' }}>11:00 am</div>
-                  </div>
-
-                  {/* Columns */}
-                  <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
+                <div style={{ display: 'flex', position: 'relative', flex: 1 }}>
+                  {/* Day Headers */}
+                  <div style={{ position: 'absolute', top: 0, left: '80px', right: 0, display: 'flex', justifyContent: 'space-between' }}>
                     {[{d: 'Mon', n: '22'}, {d: 'Tue', n: '23'}, {d: 'Wed', n: '24'}, {d: 'Thu', n: '25'}, {d: 'Fri', n: '26'}, {d: 'Sat', n: '27'}].map((day, i) => (
-                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px', color: day.d === 'Wed' ? '#111' : '#aaa' }}>
                           <div style={{ fontSize: '1rem', fontWeight: 500 }}>{day.d}</div>
                           <div style={{ fontSize: '1.1rem', fontWeight: day.d === 'Wed' ? 600 : 500, marginTop: '4px' }}>{day.n}</div>
                         </div>
-                        {/* Dotted Line */}
-                        <div style={{ position: 'absolute', top: '60px', bottom: '0', width: '0', borderLeft: '1.5px dotted rgba(0,0,0,0.15)' }}></div>
                       </div>
                     ))}
+                  </div>
 
-                    {/* Events */}
-                    {/* Theme Event */}
-                    <div style={{ position: 'absolute', top: '75px', left: '17%', width: '48%', background: 'var(--primary)', borderRadius: '16px', padding: '16px 20px', color: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 10 }}>
-                      <div>
-                        <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '4px' }}>Weekly Team Sync</div>
-                        <div style={{ fontSize: '0.85rem', color: '#333', fontWeight: 600 }}>Discuss progress on projects</div>
+                  {/* Timeline Area (Below Headers) */}
+                  <div style={{ position: 'absolute', top: '60px', bottom: 0, left: 0, right: 0, display: 'flex' }}>
+                    {/* Y-Axis */}
+                    <div style={{ width: '80px', color: '#555', fontSize: '0.9rem', fontWeight: 500, position: 'relative' }}>
+                      <div style={{ position: 'absolute', top: '0%', transform: 'translateY(-50%)' }}>8:00 am</div>
+                      <div style={{ position: 'absolute', top: '30%', transform: 'translateY(-50%)' }}>9:00 am</div>
+                      <div style={{ position: 'absolute', top: '60%', transform: 'translateY(-50%)' }}>10:00 am</div>
+                      <div style={{ position: 'absolute', top: '90%', transform: 'translateY(-50%)' }}>11:00 am</div>
+                    </div>
+                    
+                    {/* Columns and Events */}
+                    <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
+                      {[0, 1, 2, 3, 4, 5].map((_, i) => (
+                        <div key={i} style={{ flex: 1, position: 'relative' }}>
+                          {/* Dotted Line */}
+                          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 0, borderLeft: '1.5px dotted rgba(0,0,0,0.15)' }}></div>
+                        </div>
+                      ))}
+
+                      {/* Events */}
+                      {/* Theme Event */}
+                      <div style={{ position: 'absolute', top: '5%', left: '17%', width: '48%', background: 'var(--primary)', borderRadius: '16px', padding: '12px 16px', color: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 10 }}>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>Weekly</div>
                       </div>
-                      <div style={{ display: 'flex' }}>
-                        {/* Avatars */}
-                        <img src="https://i.pravatar.cc/100?img=11" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)', marginLeft: '-10px', zIndex: 3, objectFit: 'cover' }} />
-                        <img src="https://i.pravatar.cc/100?img=47" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)', marginLeft: '-10px', zIndex: 2, objectFit: 'cover' }} />
-                        <img src="https://i.pravatar.cc/100?img=12" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)', marginLeft: '-10px', zIndex: 1, objectFit: 'cover' }} />
+
+                      {/* Light Event */}
+                      <div style={{ position: 'absolute', top: '65%', left: '49%', width: '36%', background: '#fff', borderRadius: '16px', padding: '12px 16px', color: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', zIndex: 10 }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 600 }}>Onboarding</div>
                       </div>
                     </div>
-
-                    {/* Light Event */}
-                    <div style={{ position: 'absolute', top: '185px', left: '49%', width: '36%', background: '#fff', borderRadius: '16px', padding: '16px 20px', color: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', zIndex: 10 }}>
-                      <div>
-                        <div style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>Onboarding Session</div>
-                        <div style={{ fontSize: '0.85rem', color: '#777', fontWeight: 500 }}>Introduction for new hires</div>
-                      </div>
-                      <div style={{ display: 'flex' }}>
-                        <img src="https://i.pravatar.cc/100?img=5" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #fff', marginLeft: '-10px', zIndex: 2, objectFit: 'cover' }} />
-                        <img src="https://i.pravatar.cc/100?img=8" alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #fff', marginLeft: '-10px', zIndex: 1, objectFit: 'cover' }} />
-                      </div>
-                    </div>
-
                   </div>
                 </div>
               </div>
 
-            </div>
 
             {/* ── 3D Pie & Contribution Section ── */}
-            <div style={{ display: 'flex', gap: '24px', marginTop: '24px', alignItems: 'stretch' }}>
                 {/* Moved Results Breakdown */}
-                <div className="db-card db-chart-card" style={{ flex: '1.5', display: 'flex', flexDirection: 'column' }}>
+                <div className="db-card db-chart-card bento-breakdown" style={{ display: 'flex', flexDirection: 'column', gridColumn: '3 / span 2', order: 8 }}>
                   <div className="db-chart-header">
                     <span className="db-chart-title">Results Breakdown</span>
                     <div style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1975,26 +2000,24 @@ function DashboardContent() {
 
                 {/* 3D Pie Chart */}
                 <div 
-                  className="db-pie-container"
-                  style={{ flex: '2.5', marginTop: 0 }}
+                  className="db-card db-pie-container bento-pie"
+                  style={{ marginTop: 0, height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', gridColumn: 'span 2' }}
                 >
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', padding: '20px 24px', fontSize: '1.1rem', fontWeight: 500, color: '#1a1a1a', zIndex: 10 }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', padding: '20px 24px', fontSize: '1.3rem', fontWeight: 600, color: '#1a1a1a', zIndex: 100 }}>
                     Hall Of Unsub
                   </div>
                   
                   {pieSlices.length === 0 ? (
-                    <div style={{ width: '100%', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontWeight: 500, marginTop: '20px' }}>No unsubs to display</div>
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontWeight: 500 }}>No unsubs to display</div>
                   ) : (
-                    <>
+                    <div style={{ transform: 'scale(1.0)', transformOrigin: 'center center', position: 'relative', width: '400px', height: '400px', marginTop: '70px' }}>
                       {/* The 3D wrapper for just the SVG slices */}
                       <div 
                         style={{ 
-                          position: 'relative', 
-                          width: '400px', height: '400px', 
+                          position: 'absolute', inset: 0,
                       transformStyle: 'preserve-3d',
                       transform: 'rotateX(60deg) rotateZ(-25deg)',
-                      transition: 'transform 0.5s ease',
-                      marginTop: '20px'
+                      transition: 'transform 0.5s ease'
                     }}
                   >
                     {/* Stacked layers for 3D thickness (30 layers) */}
@@ -2033,7 +2056,7 @@ function DashboardContent() {
                   </div>
 
                   {/* 2D Projected HTML Labels for perfect clarity */}
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '400px', height: '400px', pointerEvents: 'none', marginTop: '20px' }}>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '400px', height: '400px', pointerEvents: 'none' }}>
                     {pieSlices.map((slice, j) => {
                       const rawX = slice.labelX + slice.pullOutX;
                       const rawY = slice.labelY + slice.pullOutY;
@@ -2062,7 +2085,7 @@ function DashboardContent() {
                           background: slice.isHovered ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.7)',
                           backdropFilter: 'blur(8px)',
                           WebkitBackdropFilter: 'blur(8px)',
-                          padding: slice.isHovered ? '8px 16px' : '6px 12px',
+                          padding: slice.isHovered ? '10px 20px' : '8px 16px',
                           borderRadius: '12px',
                           boxShadow: slice.isHovered ? '0 12px 32px rgba(0,0,0,0.2)' : '0 4px 12px rgba(0,0,0,0.08)',
                           border: slice.isHovered ? `2px solid ${slice.color}` : '1px solid rgba(255,255,255,0.9)',
@@ -2070,27 +2093,27 @@ function DashboardContent() {
                           zIndex: slice.isHovered ? 100 : 1,
                           opacity: (hoveredSlice !== null && !slice.isHovered) ? 0.3 : 1
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: slice.color, lineHeight: 1 }}>{slice.count}</span>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111', background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{slice.percentage}%</span>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '1.5rem', fontWeight: 900, color: slice.color, lineHeight: 1 }}>{slice.count}</span>
+                            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#111', background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{slice.percentage}%</span>
                           </div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#555', marginTop: '4px', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slice.org}</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#555', marginTop: '6px', maxWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slice.org}</div>
                         </div>
                       );
                     })}
                   </div>
-                  </>
+                    </div>
                   )}
                 </div>
 
                 <div 
-                  className="db-card" 
+                  className="db-card bento-contribution" 
                   style={{
                     position: 'relative',
-                    flex: '1', 
-                    minWidth: '280px',
                     display: 'flex', 
                     flexDirection: 'column', 
+                    gridColumn: 'span 1',
+                    gridRow: 'auto',
                     gap: '16px',
                     background: 'rgba(255,255,255,0.7)',
                     backdropFilter: 'blur(20px)',
@@ -2108,7 +2131,7 @@ function DashboardContent() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, overflowY: 'auto' }}>
-                    {contributionData.map((d) => (
+                    {[...contributionData].sort((a, b) => b.count - a.count).slice(0, 3).map((d) => (
                       <div key={d.org} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '0.9rem', maxWidth: '70%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.org}</span>
@@ -2129,12 +2152,16 @@ function DashboardContent() {
                       </div>
                     ))}
                     {contributionData.length === 0 && (
-                       <div style={{ color: '#888', fontSize: '0.9rem', textAlign: 'center', marginTop: '60px', fontWeight: 500 }}>No contribution data yet</div>
+                            <div style={{ color: '#888', fontSize: '0.9rem', textAlign: 'center', marginTop: '60px', fontWeight: 500 }}>No contribution data yet</div>
+                    )}
+                    {contributionData.length > 0 && (
+                      <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#888', fontWeight: 600, marginTop: 'auto', paddingTop: '10px' }}>
+                        Top 3 contribution
+                      </div>
                     )}
                   </div>
                 </div>
             </div>
-
           </main>
 
           {/* ── Phone Chat Overlay ── */}
@@ -2198,13 +2225,7 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* ── Settings Button ── */}
-        <button className="db-settings-btn" onClick={() => setIsSettingsOpen(true)} title="Settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
+
 
         {/* ── Settings Overlay ── */}
         <div className={`db-overlay ${isSettingsOpen ? 'open' : ''}`} onClick={(e) => {
@@ -2220,17 +2241,6 @@ function DashboardContent() {
             <div className="db-overlay-avatar">{initials}</div>
             <h2 className="db-overlay-name">{displayName}</h2>
             <p className="db-overlay-email">{info?.email || '—'}</p>
-
-            <div className="db-theme-picker">
-              <span className="db-theme-label">Theme Color</span>
-              <div className="db-theme-options">
-                <button className={`db-theme-dot ${theme === 'yellow' ? 'active' : ''}`} style={{background: '#fbbf24'}} onClick={() => changeTheme('yellow')} title="Yellow"></button>
-                <button className={`db-theme-dot ${theme === 'red' ? 'active' : ''}`} style={{background: '#f87171'}} onClick={() => changeTheme('red')} title="Red"></button>
-                <button className={`db-theme-dot ${theme === 'green' ? 'active' : ''}`} style={{background: '#4ade80'}} onClick={() => changeTheme('green')} title="Green"></button>
-                <button className={`db-theme-dot ${theme === 'blue' ? 'active' : ''}`} style={{background: '#60a5fa'}} onClick={() => changeTheme('blue')} title="Blue"></button>
-                <button className={`db-theme-dot ${theme === 'violet' ? 'active' : ''}`} style={{background: '#a78bfa'}} onClick={() => changeTheme('violet')} title="Violet"></button>
-              </div>
-            </div>
 
             <a href="/logout" className="db-overlay-signout" id="dashboard-signout">Sign Out</a>
           </div>
