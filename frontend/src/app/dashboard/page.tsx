@@ -64,6 +64,7 @@ function DashboardContent() {
   const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chartWrapRef = useRef<HTMLDivElement>(null);
   const knownIdsRef = useRef<Set<string>>(new Set());
   const emailRef = useRef<string>('');
 
@@ -272,6 +273,13 @@ function DashboardContent() {
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMsgs, isTyping]);
+
+  // Scroll chart to the right (latest day) on load or data change
+  useEffect(() => {
+    if (chartWrapRef.current) {
+      chartWrapRef.current.scrollLeft = chartWrapRef.current.scrollWidth;
+    }
+  }, [chartFilter, logsLoading]);
 
   const successCount = logs.filter(l => l.result === 'success').length;
   const errorCount   = logs.filter(l => l.result === 'error').length;
@@ -1532,19 +1540,120 @@ function DashboardContent() {
           color: #0369a1;
         }
 
+        /* ── Welcome and Stats ── */
+        .db-welcome {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+        .db-stats-row {
+          display: flex;
+          gap: 48px;
+          align-items: center;
+          padding-right: 20px;
+        }
+
+        .db-mobile-y-axis { display: none; }
+
         /* ── Mobile Responsive ── */
-        @media (max-width: 1000px) {
-          .db-grid {
+        @media (max-width: 1100px) {
+          .db-bento-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+          }
+          .bento-profile, .bento-streak, .bento-unread, .bento-contribution { grid-column: span 1; order: initial; }
+          .bento-pie, .bento-calendar, .bento-mails, .bento-breakdown { grid-column: span 2; order: initial; }
+        }
+
+        @media (max-width: 768px) {
+          .db-bento-grid {
             grid-template-columns: 1fr;
-            grid-template-rows: auto;
+            gap: 16px;
           }
-          .db-right-panel {
-            grid-column: 1;
-            grid-row: auto;
+          .bento-profile { grid-column: span 1 !important; order: -1 !important; }
+          .bento-streak { grid-column: span 1 !important; order: 0 !important; }
+          .bento-unread { grid-column: span 1 !important; order: 1 !important; }
+          .bento-contribution { grid-column: span 1 !important; order: 2 !important; }
+          .bento-pie { grid-column: span 1 !important; order: 3 !important; }
+          .bento-calendar { grid-column: span 1 !important; order: 4 !important; }
+          .bento-mails { grid-column: span 1 !important; order: 5 !important; }
+          .bento-breakdown { grid-column: span 1 !important; order: 6 !important; }
+          
+          .db-pie-wrapper {
+            transform: scale(0.65) !important;
+            margin-top: 30px !important;
           }
-          .db-phone-mockup { height: 500px; }
-          .db-body { padding: 24px 20px 40px; }
-          .db-nav { padding: 14px 20px; }
+          .db-body { padding: 20px 16px 40px; }
+          .db-nav { padding: 14px 16px; }
+          
+          .db-welcome {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 20px;
+          }
+          .db-stats-row {
+            flex-wrap: wrap;
+            gap: 24px;
+            padding-right: 0;
+            justify-content: flex-start;
+          }
+          .db-welcome h1 {
+            font-size: 2rem;
+          }
+          
+          .db-phone-mockup {
+            max-width: 100%;
+            height: 100vh;
+            border-radius: 0;
+            transform: translateY(100%);
+          }
+          .db-phone-overlay.open .db-phone-mockup {
+            transform: translateY(0);
+          }
+          .db-phone-toggle-btn {
+            top: auto !important;
+            bottom: 24px;
+            right: 24px;
+            transform: none !important;
+            border-radius: 50% !important;
+            width: 56px;
+            height: 56px;
+            padding: 0;
+          }
+          .db-phone-toggle-btn.open {
+            transform: scale(0) !important;
+          }
+          .db-chart-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+          .db-pie-container {
+            height: 300px !important;
+          }
+          .bento-calendar {
+            overflow: visible;
+          }
+          .db-calendar-inner {
+            min-height: 250px;
+          }
+          .calendar-header-desktop { display: none !important; }
+          .calendar-header-mobile { display: block !important; }
+          .db-chart-wrap {
+            overflow-x: auto;
+            justify-content: flex-start;
+            padding-bottom: 12px;
+          }
+          .db-chart-svg {
+            min-width: 600px;
+          }
+          .db-mobile-y-axis {
+            display: block !important;
+          }
+          .chart-y-label {
+            display: none !important;
+          }
         }
       `}</style>
 
@@ -1598,14 +1707,14 @@ function DashboardContent() {
           <main className="db-body">
 
             {/* Welcome */}
-            <div className="db-welcome" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div className="db-welcome">
               <div>
                 <h1 style={{ margin: 0, marginBottom: '8px' }}>Welcome in, {displayName}</h1>
                 <p style={{ margin: 0 }}>Here&apos;s your unsubscribe activity at a glance.</p>
               </div>
 
               {/* Stats Row */}
-              <div style={{ display: 'flex', gap: '48px', alignItems: 'center', paddingRight: '20px' }}>
+              <div className="db-stats-row">
                 
                 {/* Employe */}
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1647,7 +1756,7 @@ function DashboardContent() {
             <div className="db-bento-grid">
 
               {/* Profile Card */}
-              <div className="db-card bento-profile" style={{ position: 'relative', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', minHeight: '340px', overflow: 'hidden' }}>
+              <div className="db-card bento-profile" style={{ order: -1, position: 'relative', padding: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', minHeight: '340px', overflow: 'hidden' }}>
                 <img src="/client.jpg" alt="Trevor" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
                 
                 {/* Gradient overlay */}
@@ -1663,7 +1772,7 @@ function DashboardContent() {
               </div>
 
               {/* Time Saved Clock Card */}
-              <div className="db-card db-clock-card bento-unread" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <div className="db-card db-clock-card bento-unread" style={{ order: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '24px', right: '24px', width: '50px', height: '50px', filter: 'invert(0.8)' }}>
                   {clockData && <Lottie animationData={clockData} loop={true} autoplay={true} />}
                 </div>
@@ -1701,7 +1810,7 @@ function DashboardContent() {
               </div>
 
               {/* Activity / Progress card */}
-              <div className="db-card db-activity-card bento-streak">
+              <div className="db-card db-activity-card bento-streak" style={{ order: 0 }}>
                 <div style={{ position: 'absolute', top: '16px', right: '16px', width: '60px', height: '60px' }}>
                   {fireData && <Lottie animationData={fireData} loop={true} autoplay={true} />}
                 </div>
@@ -1789,26 +1898,27 @@ function DashboardContent() {
                     ))}
                   </div>
                 </div>
-                <div className="db-chart-wrap">
-                  <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="db-chart-svg">
-                    <defs>
-                      <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
+                <div className="db-chart-container" style={{ position: 'relative' }}>
+                  <div className="db-chart-wrap" ref={chartWrapRef}>
+                    <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="db-chart-svg">
+                      <defs>
+                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
 
-                    {/* Y-Axis Grid Lines */}
-                    {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-                      const y = paddingY + ratio * (chartHeight - 2 * paddingY);
-                      const val = Math.round(chartMaxCount * (1 - ratio));
-                      return (
-                        <g key={`grid-${idx}`}>
-                          <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} className="chart-grid" />
-                          <text x={paddingX - 10} y={y} className="chart-y-label">{val}</text>
-                        </g>
-                      );
-                    })}
+                      {/* Y-Axis Grid Lines */}
+                      {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                        const y = paddingY + ratio * (chartHeight - 2 * paddingY);
+                        const val = Math.round(chartMaxCount * (1 - ratio));
+                        return (
+                          <g key={`grid-${idx}`}>
+                            <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} className="chart-grid" />
+                            <text x={paddingX - 10} y={y} className="chart-y-label">{val}</text>
+                          </g>
+                        );
+                      })}
 
                     {/* Area under the line */}
                     <path d={areaD} className="chart-area" />
@@ -1858,6 +1968,21 @@ function DashboardContent() {
                       </g>
                     )}
                   </svg>
+                  </div>
+
+                  {/* Absolute Y-Axis Overlay on the LEFT (Mobile Only, Never scrolls) */}
+                  <div className="db-mobile-y-axis" style={{ position: 'absolute', left: 0, top: '16px', bottom: '12px', width: '36px', background: 'transparent', pointerEvents: 'none', zIndex: 10 }}>
+                    {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                      const topPercent = (paddingY + ratio * (chartHeight - 2 * paddingY)) / chartHeight * 100;
+                      const val = Math.round(chartMaxCount * (1 - ratio));
+                      return (
+                        <div key={`ylab-html-left-${idx}`} style={{ position: 'absolute', top: `${topPercent}%`, right: '4px', transform: 'translateY(-50%)', fontSize: '12px', fontWeight: 700, color: '#444', textShadow: '0 0 8px rgba(255,255,255,1), 0 0 4px rgba(255,255,255,1)' }}>
+                          {val}
+                        </div>
+                      );
+                    })}
+                  </div>
+
                 </div>
               </div>
 
@@ -1866,54 +1991,60 @@ function DashboardContent() {
               <div className="db-card bento-calendar" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 500, color: '#1a1a1a' }}>September 2024</div>
+                  <div className="calendar-header-desktop" style={{ fontSize: '1.2rem', fontWeight: 500, color: '#1a1a1a' }}>September 2024</div>
+                  <div className="calendar-header-mobile" style={{ fontSize: '1.2rem', fontWeight: 500, color: '#1a1a1a', display: 'none' }}>Today</div>
                 </div>
 
                 {/* Grid */}
-                <div style={{ display: 'flex', position: 'relative', flex: 1 }}>
-                  {/* Day Headers */}
-                  <div style={{ position: 'absolute', top: 0, left: '80px', right: 0, display: 'flex', justifyContent: 'space-between' }}>
-                    {[{d: 'Mon', n: '22'}, {d: 'Tue', n: '23'}, {d: 'Wed', n: '24'}, {d: 'Thu', n: '25'}, {d: 'Fri', n: '26'}, {d: 'Sat', n: '27'}].map((day, i) => (
-                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '20px', color: day.d === 'Wed' ? '#111' : '#aaa' }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 500 }}>{day.d}</div>
-                          <div style={{ fontSize: '1.1rem', fontWeight: day.d === 'Wed' ? 600 : 500, marginTop: '4px' }}>{day.n}</div>
-                        </div>
-                      </div>
-                    ))}
+                <div className="db-calendar-inner" style={{ display: 'flex', position: 'relative', flex: 1 }}>
+                  
+                  {/* Fixed Y-Axis (Time) */}
+                  <div style={{ position: 'absolute', top: '60px', bottom: 0, left: 0, width: '60px', color: '#555', fontSize: '0.85rem', fontWeight: 500, zIndex: 10 }}>
+                    <div style={{ position: 'absolute', top: '0%', transform: 'translateY(-50%)' }}>8:00 am</div>
+                    <div style={{ position: 'absolute', top: '30%', transform: 'translateY(-50%)' }}>9:00 am</div>
+                    <div style={{ position: 'absolute', top: '60%', transform: 'translateY(-50%)' }}>10:00 am</div>
+                    <div style={{ position: 'absolute', top: '90%', transform: 'translateY(-50%)' }}>11:00 am</div>
                   </div>
 
-                  {/* Timeline Area (Below Headers) */}
-                  <div style={{ position: 'absolute', top: '60px', bottom: 0, left: 0, right: 0, display: 'flex' }}>
-                    {/* Y-Axis */}
-                    <div style={{ width: '80px', color: '#555', fontSize: '0.9rem', fontWeight: 500, position: 'relative' }}>
-                      <div style={{ position: 'absolute', top: '0%', transform: 'translateY(-50%)' }}>8:00 am</div>
-                      <div style={{ position: 'absolute', top: '30%', transform: 'translateY(-50%)' }}>9:00 am</div>
-                      <div style={{ position: 'absolute', top: '60%', transform: 'translateY(-50%)' }}>10:00 am</div>
-                      <div style={{ position: 'absolute', top: '90%', transform: 'translateY(-50%)' }}>11:00 am</div>
-                    </div>
-                    
-                    {/* Columns and Events */}
-                    <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
-                      {[0, 1, 2, 3, 4, 5].map((_, i) => (
-                        <div key={i} style={{ flex: 1, position: 'relative' }}>
-                          {/* Dotted Line */}
-                          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 0, borderLeft: '1.5px dotted rgba(0,0,0,0.15)' }}></div>
-                        </div>
-                      ))}
-
-                      {/* Events */}
-                      {/* Theme Event */}
-                      <div style={{ position: 'absolute', top: '5%', left: '17%', width: '48%', background: 'var(--primary)', borderRadius: '16px', padding: '12px 16px', color: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 10 }}>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>Weekly</div>
+                  {/* Scrollable Timeline Area */}
+                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: '60px', right: 0, overflowX: 'auto', overflowY: 'hidden' }}>
+                    <div style={{ minWidth: '400px', height: '100%', position: 'relative' }}>
+                      
+                      {/* Day Headers */}
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between' }}>
+                        {[{d: 'Mon', n: '22'}, {d: 'Tue', n: '23'}, {d: 'Wed', n: '24'}, {d: 'Thu', n: '25'}, {d: 'Fri', n: '26'}, {d: 'Sat', n: '27'}].map((day, i) => (
+                          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ textAlign: 'center', marginBottom: '20px', color: day.d === 'Wed' ? '#111' : '#aaa' }}>
+                              <div style={{ fontSize: '1rem', fontWeight: 500 }}>{day.d}</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: day.d === 'Wed' ? 600 : 500, marginTop: '4px' }}>{day.n}</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
 
-                      {/* Light Event */}
-                      <div style={{ position: 'absolute', top: '65%', left: '49%', width: '36%', background: '#fff', borderRadius: '16px', padding: '12px 16px', color: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', zIndex: 10 }}>
-                        <div style={{ fontSize: '1rem', fontWeight: 600 }}>Onboarding</div>
+                      {/* Columns and Events */}
+                      <div style={{ position: 'absolute', top: '60px', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between' }}>
+                        {[0, 1, 2, 3, 4, 5].map((_, i) => (
+                          <div key={i} style={{ flex: 1, position: 'relative' }}>
+                            {/* Dotted Line */}
+                            <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 0, borderLeft: '1.5px dotted rgba(0,0,0,0.15)' }}></div>
+                          </div>
+                        ))}
+
+                        {/* Events */}
+                        {/* Theme Event */}
+                        <div style={{ position: 'absolute', top: '5%', left: '17%', width: '48%', background: 'var(--primary)', borderRadius: '16px', padding: '12px 16px', color: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 10 }}>
+                          <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>Weekly</div>
+                        </div>
+
+                        {/* Light Event */}
+                        <div style={{ position: 'absolute', top: '65%', left: '49%', width: '36%', background: '#fff', borderRadius: '16px', padding: '12px 16px', color: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', zIndex: 10 }}>
+                          <div style={{ fontSize: '1rem', fontWeight: 600 }}>Onboarding</div>
+                        </div>
                       </div>
                     </div>
                   </div>
+
                 </div>
               </div>
 
@@ -2015,7 +2146,7 @@ function DashboardContent() {
                   {pieSlices.length === 0 ? (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontWeight: 500 }}>No unsubs to display</div>
                   ) : (
-                    <div style={{ transform: 'scale(1.0)', transformOrigin: 'center center', position: 'relative', width: '400px', height: '400px', marginTop: '70px' }}>
+                    <div className="db-pie-wrapper" style={{ transform: 'scale(1.0)', transformOrigin: 'center center', position: 'relative', width: '400px', height: '400px', marginTop: '70px' }}>
                       {/* The 3D wrapper for just the SVG slices */}
                       <div 
                         style={{ 
