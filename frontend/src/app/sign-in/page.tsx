@@ -41,147 +41,254 @@ function SignInContent() {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d0f14;
-      --surface: #161921;
-      --surface2: #1e2130;
-      --border: rgba(255,255,255,0.07);
-      --border-active: rgba(91,138,245,0.4);
-      --text: #e8eaf0;
-      --text-muted: #7b849a;
-      --accent: #5b8af5;
-      --accent2: #a78bfa;
-      --glow: rgba(91,138,245,0.3);
-      --error: #f87171;
-      --warn: #fbbf24;
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --border-active: #8abce4;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #438fcb;
+      --accent-dark: #296b9e;
+      --error: #ef4444;
+      --btn-bg: #1a1a1a;
+      --btn-hover: #333333;
     }
 
     .signin-root {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Plus Jakarta Sans', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      overflow: hidden;
+      display: flex;
+      padding: 16px;
+      gap: 16px;
+    }
+
+    /* ── Left Panel ── */
+    .left-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
       position: relative;
     }
 
-    .bg-canvas {
-      position: fixed; inset: 0; z-index: 0;
-      background:
-        radial-gradient(ellipse 80% 60% at 20% 40%, rgba(91,138,245,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 70%, rgba(167,139,250,0.10) 0%, transparent 60%),
-        var(--bg);
+    .form-container {
+      width: 100%;
+      max-width: 380px;
     }
-    .orb { position: fixed; border-radius: 50%; filter: blur(80px); animation: float 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
-    .orb-1 { width: 400px; height: 400px; background: rgba(91,138,245,0.15); top: -100px; left: -100px; animation-delay: 0s; }
-    .orb-2 { width: 350px; height: 350px; background: rgba(167,139,250,0.12); bottom: -80px; right: -80px; animation-delay: -3s; }
-    .orb-3 { width: 250px; height: 250px; background: rgba(91,138,245,0.08); top: 50%; left: 60%; animation-delay: -5s; }
-    @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-28px) scale(1.05)} }
-
-    .grid-overlay { position: fixed; inset: 0; z-index: 0; background-image: radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px); background-size: 40px 40px; pointer-events: none; }
-
-    .container { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
-
-    /* ── Card ── */
-    .card {
-      background: rgba(22,25,33,.92);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid var(--border);
-      border-radius: 26px;
-      padding: 46px 44px 40px;
-      width: 440px;
-      max-width: 95vw;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset, 0 32px 80px rgba(0,0,0,.55), 0 0 60px var(--glow);
-      animation: cardIn .65s cubic-bezier(.22,1,.36,1);
-    }
-    @keyframes cardIn { from{opacity:0;transform:translateY(28px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
 
     /* ── Logo ── */
-    .logo { display:flex; align-items:center; gap:12px; margin-bottom:30px; }
-    .logo-icon { width:44px; height:44px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px var(--glow); flex-shrink:0; }
-    .logo-icon svg { width:22px; height:22px; }
-    .logo-text { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; }
-    .logo-sub { font-size:.72rem; color:var(--text-muted); margin-top:2px; }
+    .logo { display:flex; align-items:center; gap:12px; margin-bottom:40px; }
+    .logo-icon { 
+      width:48px; height:48px; 
+      background: var(--btn-bg); 
+      border-radius:12px; 
+      display:flex; align-items:center; justify-content:center; 
+      color: white;
+    }
+    .logo-icon svg { width:24px; height:24px; }
 
-    /* ── Tabs ── */
-    .tabs { display:flex; background:var(--surface2); border-radius:12px; padding:4px; margin-bottom:30px; gap:4px; }
-    .tab-btn { flex:1; padding:10px 16px; border:none; border-radius:9px; font-family:'Inter',sans-serif; font-size:.875rem; font-weight:500; cursor:pointer; transition:all .2s; background:transparent; color:var(--text-muted); }
-    .tab-btn.active { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:0 4px 16px var(--glow); }
-    .tab-btn:not(.active):hover { color:var(--text); background:rgba(255,255,255,.04); }
+    /* ── Headers ── */
+    .tab-header { margin-bottom:32px; }
+    .tab-header h1 { font-size:2rem; font-weight:700; letter-spacing:-.03em; line-height:1.2; margin-bottom:8px; color: var(--text); }
+    .tab-header p { color:var(--text-muted); font-size:0.95rem; line-height:1.5; }
 
-    /* ── Tab header ── */
-    .tab-header { margin-bottom:26px; }
-    .tab-header h1 { font-size:1.5rem; font-weight:700; letter-spacing:-.03em; line-height:1.2; margin-bottom:8px; }
-    .tab-header h1 span { background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-    .tab-header p { color:var(--text-muted); font-size:.875rem; line-height:1.65; }
+    /* ── Form elements ── */
+    .form-group { margin-bottom:24px; }
+    .form-label { display:block; font-size:0.85rem; font-weight:600; color:var(--text); margin-bottom:8px; }
+    .form-input { 
+      width:100%; padding:14px 16px; 
+      background:#fff; border:1px solid var(--border); 
+      border-radius:10px; color:var(--text); 
+      font-family:'Plus Jakarta Sans',sans-serif; font-size:0.95rem; 
+      outline:none; transition:all 0.2s; 
+    }
+    .form-input::placeholder { color:#94a3b8; }
+    .form-input:focus { border-color:var(--border-active); box-shadow:0 0 0 4px rgba(67, 143, 203, 0.15); }
 
-    /* ── Alert ── */
-    .alert { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:10px; font-size:.84rem; line-height:1.5; margin-bottom:18px; animation:alertIn .3s ease; }
-    @keyframes alertIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-    .alert-error { background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.25); color:var(--error); }
-    .alert svg { width:15px; height:15px; flex-shrink:0; margin-top:1px; }
-
-    /* ── Feature list (sign-in tab) ── */
-    .features { list-style:none; margin-bottom:26px; display:flex; flex-direction:column; gap:9px; }
-    .features li { display:flex; align-items:center; gap:10px; font-size:.84rem; color:var(--text-muted); }
-    .features li .dot { width:6px; height:6px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); flex-shrink:0; }
-
-    /* ── Name input (signup only) ── */
-    .form-group { margin-bottom:20px; }
-    .form-label { display:block; font-size:.78rem; font-weight:500; color:var(--text-muted); margin-bottom:8px; letter-spacing:.02em; text-transform:uppercase; }
-    .form-input { width:100%; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none; transition:border-color .2s, box-shadow .2s; }
-    .form-input::placeholder { color:var(--text-muted); }
-    .form-input:focus { border-color:var(--border-active); box-shadow:0 0 0 3px rgba(91,138,245,.12); }
-    .form-hint { font-size:.75rem; color:var(--text-muted); margin-top:6px; }
-
-    /* ── Google CTA button ── */
-    .btn-google {
+    /* ── Buttons ── */
+    .btn-main {
       display:flex; align-items:center; justify-content:center; gap:12px;
       width:100%; padding:14px 20px;
-      background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
-      border:none; border-radius:13px; color:#fff;
-      font-family:'Inter',sans-serif; font-size:.95rem; font-weight:600;
+      background: var(--btn-bg);
+      border:none; border-radius:10px; color:#fff;
+      font-family:'Plus Jakarta Sans',sans-serif; font-size:0.95rem; font-weight:600;
       cursor:pointer; text-decoration:none;
-      transition:all .25s ease;
-      box-shadow:0 8px 28px var(--glow);
-      position:relative; overflow:hidden;
+      transition:all 0.2s ease;
     }
-    .btn-google::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.15),transparent); opacity:0; transition:opacity .25s; }
-    .btn-google:not(.disabled):hover::before { opacity:1; }
-    .btn-google:not(.disabled):hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(91,138,245,.5); }
-    .btn-google:not(.disabled):active { transform:translateY(0); }
-    .btn-google svg { width:20px; height:20px; flex-shrink:0; }
-    .btn-google.disabled { opacity:0.42; cursor:not-allowed; pointer-events:none; filter:grayscale(0.3); }
+    .btn-main:hover:not(.disabled) { background: var(--btn-hover); }
+    .btn-main.disabled { opacity:0.6; cursor:not-allowed; }
+    .btn-main svg { width:20px; height:20px; flex-shrink:0; fill: white; }
 
-    /* ── Google pill badge ── */
-    .google-badge {
-      display:inline-flex; align-items:center; gap:7px;
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
-      border-radius:99px; padding:5px 12px;
-      font-size:.75rem; color:var(--text-muted);
-      margin-bottom:20px;
+    .switch-hint { text-align:center; font-size:0.9rem; color:var(--text-muted); margin-top:24px; }
+    .switch-hint button { 
+      background:none; border:none; color:var(--text); font-size:0.9rem; 
+      cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; 
+      padding:0; text-decoration:none; margin-left:4px;
     }
-    .google-badge svg { width:14px; height:14px; }
+    .switch-hint button:hover { text-decoration:underline; }
 
-    /* ── Divider ── */
-    .divider { display:flex; align-items:center; gap:12px; margin:22px 0; }
-    .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
-    .divider span { font-size:.75rem; color:var(--text-muted); }
+    /* ── Right Panel ── */
+    .right-panel {
+      flex: 1.2;
+      display: none;
+      border-radius: 24px;
+      background: 
+        radial-gradient(circle at 10% 90%, #438fcb 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, #7eb3df 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, #e0f2fe 0%, #a2cff0 50%, #76b1e0 100%);
+      background-color: #8abce4;
+      position: relative;
+      overflow: hidden;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+    @media (min-width: 900px) {
+      .right-panel { display: flex; }
+    }
 
-    /* ── Privacy / switch hint ── */
-    .privacy-note { text-align:center; font-size:.74rem; color:var(--text-muted); line-height:1.6; }
-    .privacy-note span { color:var(--accent); }
-    .switch-hint { text-align:center; font-size:.82rem; color:var(--text-muted); margin-top:18px; }
-    .switch-hint button { background:none; border:none; color:var(--accent); font-size:.82rem; cursor:pointer; font-family:'Inter',sans-serif; font-weight:500; padding:0; text-decoration:underline; text-underline-offset:2px; }
-    .switch-hint button:hover { color:var(--accent2); }
+    /* ── Moving Clouds ── */
+    .db-clouds {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .css-cloud {
+      position: absolute;
+      background: #fff;
+      border-radius: 200px;
+      opacity: 0.7;
+      filter: blur(14px);
+    }
+    .css-cloud::before, .css-cloud::after {
+      content: '';
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+    }
+    .css-cloud::before {
+      width: 50%; height: 150%;
+      top: -70%; left: 15%;
+    }
+    .css-cloud::after {
+      width: 40%; height: 120%;
+      top: -50%; right: 15%;
+    }
+    .cloud-1 { width: 400px; height: 120px; top: 15%; left: -400px; opacity: 0.8; animation: floatCloud 50s linear infinite; }
+    .cloud-2 { width: 550px; height: 160px; top: 45%; left: -600px; opacity: 0.6; animation: floatCloud 75s linear infinite 15s; }
+    .cloud-3 { width: 350px; height: 100px; top: 75%; left: -400px; opacity: 0.7; animation: floatCloud 40s linear infinite 5s; }
+    .cloud-4 { width: 600px; height: 180px; top: 5%; left: -600px; opacity: 0.45; animation: floatCloud 90s linear infinite 30s; }
+    .cloud-5 { width: 450px; height: 140px; top: 60%; left: -500px; opacity: 0.65; animation: floatCloud 65s linear infinite 25s; }
+
+    @keyframes floatCloud {
+      0% { transform: translateX(0) scale(1); }
+      50% { transform: translateX(50vw) scale(1.05); }
+      100% { transform: translateX(calc(100vw + 1000px)) scale(1); }
+    }
+
+    /* ── Right Panel Content ── */
+    .right-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .right-text {
+      font-size: 4rem;
+      font-weight: 500;
+      color: #1a1a1a;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+      max-width: 500px;
+    }
+    .right-text i {
+      font-style: italic;
+      font-weight: 400;
+    }
+    
+    .landing-images {
+      margin-top: 60px;
+      position: relative;
+      width: 100%;
+      height: 350px;
+    }
+    .floating-img {
+      position: absolute;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      width: 260px;
+      transition: all 0.3s ease;
+      background: white;
+      object-fit: cover;
+    }
+    .floating-img:hover {
+      z-index: 10;
+    }
+    .img-1 {
+      top: 20px;
+      left: 20px;
+      transform: rotate(-6deg);
+      z-index: 2;
+    }
+    .img-1:hover {
+      transform: rotate(0deg) translateY(-10px) scale(1.05);
+    }
+    .img-2 {
+      top: 60px;
+      left: 140px;
+      transform: rotate(8deg);
+      z-index: 1;
+    }
+    .img-2:hover {
+      transform: rotate(0deg) translateY(-10px) scale(1.05);
+    }
+
+    /* ── Alerts ── */
+    .alert { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:10px; font-size:0.85rem; line-height:1.5; margin-bottom:20px; }
+    .alert-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--error); }
+    .alert svg { width:16px; height:16px; flex-shrink:0; margin-top:2px; }
+
+    /* ── Right Bottom Text ── */
+    .right-bottom-text {
+      position: absolute;
+      bottom: 40px;
+      right: 40px;
+      text-align: right;
+      max-width: 320px;
+      z-index: 10;
+    }
+    .right-bottom-text .divider {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px; justify-content: flex-end;
+    }
+    .right-bottom-text .divider::before {
+      content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.1);
+    }
+    .right-bottom-text .divider span {
+      font-size: 0.75rem; color: rgba(0,0,0,0.5); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .right-bottom-text .privacy-note {
+      font-size: 0.85rem; color: rgba(0,0,0,0.65); line-height: 1.6;
+    }
+    .right-bottom-text .privacy-note strong {
+      color: #1a1a1a; font-weight: 700;
+    }
   `;
 
   const googleIcon = (
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="rgba(255,255,255,0.9)"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="rgba(255,255,255,0.9)"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="rgba(255,255,255,0.9)"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="rgba(255,255,255,0.9)"/>
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="currentColor"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor"/>
     </svg>
   );
 
@@ -196,78 +303,46 @@ function SignInContent() {
       <style>{style}</style>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
       <div className="signin-root">
-        <div className="bg-canvas" />
-        <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
-        <div className="grid-overlay" />
-
-        <div className="container">
-          <div className="card">
-            {/* Logo */}
+        
+        {/* Left Panel - Form */}
+        <div className="left-panel">
+          <div className="form-container">
             <div className="logo">
               <div className="logo-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="4" width="20" height="16" rx="3"/><polyline points="2,4 12,13 22,4"/>
                 </svg>
               </div>
-              <div>
-                <div className="logo-text">UnSub</div>
-                <div className="logo-sub">Unsubscribe, beautifully</div>
-              </div>
             </div>
 
-            {/* Tabs */}
-            <div className="tabs" role="tablist">
-              <button id="tab-signin" role="tab" aria-selected={activeTab === 'signin'}
-                className={`tab-btn${activeTab === 'signin' ? ' active' : ''}`}
-                onClick={() => switchTab('signin')}>
-                Sign In
-              </button>
-              <button id="tab-signup" role="tab" aria-selected={activeTab === 'signup'}
-                className={`tab-btn${activeTab === 'signup' ? ' active' : ''}`}
-                onClick={() => switchTab('signup')}>
-                Create Account
-              </button>
-            </div>
-
-            {/* ── SIGN IN TAB ── */}
-            {activeTab === 'signin' && (
-              <div role="tabpanel" aria-labelledby="tab-signin">
+            {activeTab === 'signin' ? (
+              <>
                 <div className="tab-header">
-                  <h1>Welcome <span>back</span></h1>
-                  <p>Click the button below — Google will let you choose which account to sign in with.</p>
+                  <h1>Get Started</h1>
+                  <p>Welcome to UnSub - Let's log into your account</p>
                 </div>
 
                 {pageError && (
                   <div className="alert alert-error">{errorIcon}{pageError}</div>
                 )}
 
-                <ul className="features">
-                  <li><span className="dot" />Secure OAuth2 — no password stored</li>
-                  <li><span className="dot" />Picks up your role automatically</li>
-                  <li><span className="dot" />Admins open inbox · Users open dashboard</li>
-                </ul>
-
-                <a href="/authorize?mode=signin" className="btn-google" id="signin-btn">
+                <a href="/authorize?mode=signin" className="btn-main" id="signin-btn">
                   {googleIcon}
                   Sign In with Google
                 </a>
 
                 <div className="switch-hint">
-                  No account yet?{' '}
-                  <button onClick={() => switchTab('signup')}>Create one</button>
+                  Don't have an account? <button onClick={() => switchTab('signup')}>Sign up</button>
                 </div>
-              </div>
-            )}
-
-            {/* ── CREATE ACCOUNT TAB ── */}
-            {activeTab === 'signup' && (
-              <div role="tabpanel" aria-labelledby="tab-signup">
+              </>
+            ) : (
+              <>
                 <div className="tab-header">
-                  <h1>Create your <span>account</span></h1>
-                  <p>Google will show the account picker — the email you choose will be registered.</p>
+                  <h1>Get Started</h1>
+                  <p>Welcome to UnSub - Let's create your account</p>
                 </div>
 
                 {pageError && (
@@ -275,9 +350,7 @@ function SignInContent() {
                 )}
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="signup-name">
-                    Your name <span style={{color:'var(--error)',fontSize:'.8rem'}}>*</span>
-                  </label>
+                  <label className="form-label" htmlFor="signup-name">Your Name</label>
                   <input
                     id="signup-name"
                     type="text"
@@ -289,36 +362,58 @@ function SignInContent() {
                     required
                     autoFocus
                   />
-                  <p className="form-hint">
-                    {name.trim() ? '✓ Looking good!' : 'Enter your name to continue.'}
-                  </p>
                 </div>
 
                 <a
                   href={name.trim() ? signupHref : undefined}
-                  className={`btn-google${name.trim() ? '' : ' disabled'}`}
+                  className={`btn-main${name.trim() ? '' : ' disabled'}`}
                   id="signup-btn"
                   aria-disabled={!name.trim()}
                   tabIndex={name.trim() ? 0 : -1}
                 >
                   {googleIcon}
-                  Create Account &amp; Continue with Google
+                  Sign Up with Google
                 </a>
 
                 <div className="switch-hint">
-                  Already have an account?{' '}
-                  <button onClick={() => switchTab('signin')}>Sign in</button>
+                  Already have an account? <button onClick={() => switchTab('signin')}>Log in</button>
                 </div>
-              </div>
+              </>
             )}
+          </div>
+        </div>
 
+        {/* Right Panel - Visual */}
+        <div className="right-panel">
+          <div className="db-clouds">
+            <div className="css-cloud cloud-1"></div>
+            <div className="css-cloud cloud-2"></div>
+            <div className="css-cloud cloud-3"></div>
+            <div className="css-cloud cloud-4"></div>
+            <div className="css-cloud cloud-5"></div>
+          </div>
+          
+          <div className="right-content">
+            <div className="right-text">
+              Forward<br/>
+              and forget .
+            </div>
+            
+            <div className="landing-images">
+              <img src="https://cdn.prod.website-files.com/6929c116366a14507fc84252/6961fe8f17d6448d5348850c_service-img.webp" alt="Landing Graphic 1" className="floating-img img-1" />
+              <img src="https://cdn.prod.website-files.com/6929c116366a14507fc8424d/69a5007e9793bec9aef0bae6_card.avif" alt="Landing Graphic 2" className="floating-img img-2" />
+            </div>
+          </div>
+
+          <div className="right-bottom-text">
             <div className="divider"><span>secure · OAuth2 · no password stored</span></div>
             <p className="privacy-note">
-              UnSub uses <span>read-only</span> Gmail API access.<br/>
+              UnSub uses <strong>read-only</strong> Gmail API access.<br/>
               Role access is managed by your administrator.
             </p>
           </div>
         </div>
+
       </div>
     </>
   );

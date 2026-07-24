@@ -609,13 +609,49 @@ def api_user_info():
     try:
         resp = http_requests.get(
             f"{SUPABASE_URL}/rest/v1/users",
-            params={"email": f"eq.{email}", "select": "email,name,role", "limit": "1"},
+            params={"email": f"eq.{email}", "select": "email,name,role,created_at", "limit": "1"},
             headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
             timeout=8,
         )
         if resp.status_code == 200 and resp.json():
             row = resp.json()[0]
-            return jsonify({"email": row.get("email", email), "name": row.get("name"), "role": row.get("role", "user")})
+            created_at = row.get("created_at")
+            days_since = 0
+            if created_at:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                    now = datetime.now(dt.tzinfo)
+                    days_since = (now - dt).days
+                except Exception:
+                    pass
+            
+            total_mails = 0
+            unique_orgs = 0
+            try:
+                logs_resp = http_requests.get(
+                    f"{SUPABASE_URL}/rest/v1/unsubscribe_logs",
+                    params={"sender_email": f"eq.{email}", "select": "organization_name"},
+                    headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+                    timeout=8,
+                )
+                if logs_resp.status_code == 200:
+                    logs_data = logs_resp.json()
+                    total_mails = len(logs_data)
+                    unique_orgs = len(set(l.get("organization_name") for l in logs_data if l.get("organization_name")))
+            except Exception as e:
+                logger.warning(f"Failed to fetch logs for stats: {e}")
+
+            return jsonify({
+                "email": row.get("email", email), 
+                "name": row.get("name"), 
+                "role": row.get("role", "user"),
+                "stats": {
+                    "total_mails": total_mails,
+                    "unique_orgs": unique_orgs,
+                    "days_since": days_since
+                }
+            })
         # Email not in DB — treat as unauthenticated
         return jsonify({"error": "Not authenticated"}), 401
     except Exception as exc:

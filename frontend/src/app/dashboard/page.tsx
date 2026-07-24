@@ -9,6 +9,11 @@ interface UserInfo {
   email: string;
   name: string | null;
   role: string;
+  stats?: {
+    total_mails: number;
+    unique_orgs: number;
+    days_since: number;
+  };
 }
 
 interface LogRow {
@@ -799,7 +804,7 @@ function DashboardContent() {
         }
         .db-welcome p {
           font-size: 0.88rem;
-          color: #888;
+          color: #1a1a1a;
           margin-top: 5px;
           font-weight: 400;
         }
@@ -1608,9 +1613,9 @@ function DashboardContent() {
                     <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', padding: '6px', display: 'flex', color: '#333' }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     </div>
-                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>78</span>
+                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>{info?.stats?.total_mails || 0}</span>
                   </div>
-                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Employe</span>
+                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Total Mails</span>
                 </div>
 
                 {/* Hirings */}
@@ -1619,9 +1624,9 @@ function DashboardContent() {
                     <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', padding: '6px', display: 'flex', color: '#333' }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                     </div>
-                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>56</span>
+                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>{info?.stats?.unique_orgs || 0}</span>
                   </div>
-                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Hirings</span>
+                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Organizations</span>
                 </div>
 
                 {/* Projects */}
@@ -1630,9 +1635,9 @@ function DashboardContent() {
                     <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '8px', padding: '6px', display: 'flex', color: '#333' }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="20" x2="22" y2="20"></line></svg>
                     </div>
-                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>203</span>
+                    <span style={{ fontSize: '3.4rem', fontWeight: 300, color: '#111', lineHeight: 1, letterSpacing: '-0.03em' }}>{info?.stats?.days_since || 0}</span>
                   </div>
-                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Projects</span>
+                  <span style={{ fontSize: '0.95rem', color: '#444', fontWeight: 500, marginTop: '8px', paddingLeft: '4px' }}>Account Days</span>
                 </div>
 
               </div>
