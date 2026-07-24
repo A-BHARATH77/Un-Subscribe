@@ -383,7 +383,7 @@ def authorize():
     )
     authorization_url, state = flow.authorization_url(
         access_type="offline",
-        prompt="select_account",   # always show the account picker
+        prompt="consent",   # force Google to return a refresh token
         code_challenge=code_challenge,
         code_challenge_method="S256",
     )

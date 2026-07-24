@@ -281,6 +281,23 @@ function SignInContent() {
     .right-bottom-text .privacy-note strong {
       color: #1a1a1a; font-weight: 700;
     }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+      .signin-root {
+        padding: 0;
+      }
+      .left-panel {
+        padding: 40px 24px;
+        justify-content: center;
+      }
+      .tab-header h1 {
+        font-size: 1.75rem;
+      }
+      .logo {
+        margin-bottom: 32px;
+      }
+    }
   `;
 
   const googleIcon = (
