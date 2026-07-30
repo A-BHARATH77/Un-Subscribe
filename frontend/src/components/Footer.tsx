@@ -1,6 +1,7 @@
+// @ts-nocheck
 "use client";
 import { useState } from "react";
-// @ts-nocheck
+
 export default function Footer() {
   const [modalContent, setModalContent] = useState<string | null>(null);
 

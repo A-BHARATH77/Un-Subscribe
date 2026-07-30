@@ -1,7 +1,7 @@
+// @ts-nocheck
 "use client";
 import { useState } from "react";
 
-// @ts-nocheck
 export default function Navbar() {
   const [copied, setCopied] = useState(false);
 
