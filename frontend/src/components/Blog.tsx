@@ -2,7 +2,7 @@
 export default function Blog() {
   return (
     <>
-<section className="section_blog" suppressHydrationWarning>
+<section className="section_blog" id="blog" suppressHydrationWarning>
 <div className="padding-section-large" suppressHydrationWarning></div>
 <div className="padding-global" suppressHydrationWarning>
 <div className="container-large" suppressHydrationWarning>

@@ -2,7 +2,7 @@
 export default function Testimonials() {
   return (
     <>
-<section className="section_testimonials" suppressHydrationWarning>
+<section className="section_testimonials" id="testimonials" suppressHydrationWarning>
 <div className="padding-section-medium" suppressHydrationWarning></div>
 <div className="padding-global" suppressHydrationWarning>
 <div className="container-large" suppressHydrationWarning>

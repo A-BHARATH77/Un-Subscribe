@@ -2,7 +2,7 @@
 export default function Cta() {
   return (
     <>
-<section animation="opacity" className="section_cta" suppressHydrationWarning>
+<section animation="opacity" className="section_cta" id="get-started" suppressHydrationWarning>
 <div className="padding-global is-cta" suppressHydrationWarning>
 <div className="cta-wrap" suppressHydrationWarning>
 <div className="container-large" suppressHydrationWarning>
