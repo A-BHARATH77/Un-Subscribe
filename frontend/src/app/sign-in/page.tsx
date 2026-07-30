@@ -15,6 +15,9 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>('signin');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Read ?error= from the URL (set by Flask callback on failure)
   const urlError = searchParams.get('error') ?? '';
@@ -30,12 +33,60 @@ function SignInContent() {
     setActiveTab(tab);
     setPageError('');
     setName('');
+    setEmail('');
+    setPassword('');
     // Remove error param from URL without a reload
     window.history.replaceState({}, '', '/sign-in');
   };
 
   // Build the /authorize URL for signup (passes optional name)
   const signupHref = `/authorize?mode=signup${name.trim() ? `&name=${encodeURIComponent(name.trim())}` : ''}`;
+
+  const handleEmailLogin = async () => {
+    if (!email.trim() || !password.trim()) return;
+    setLoading(true);
+    setPageError('');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password: password.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'ok') {
+        window.location.href = data.role === 'admin' ? '/admin-dashboard' : `/dashboard?_e=${encodeURIComponent(data.email)}`;
+      } else {
+        setPageError(data.error || 'Login failed');
+      }
+    } catch (err) {
+      setPageError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSignup = async () => {
+    if (!email.trim() || !password.trim() || !name.trim()) return;
+    setLoading(true);
+    setPageError('');
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), name: name.trim(), password: password.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'ok') {
+        window.location.href = `/dashboard?_e=${encodeURIComponent(data.email)}`;
+      } else {
+        setPageError(data.error || 'Signup failed');
+      }
+    } catch (err) {
+      setPageError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const style = `
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -346,6 +397,43 @@ function SignInContent() {
                   <div className="alert alert-error">{errorIcon}{pageError}</div>
                 )}
 
+                <div className="form-group">
+                  <label className="form-label" htmlFor="signin-email">Email Address</label>
+                  <input
+                    id="signin-email"
+                    type="email"
+                    className="form-input"
+                    placeholder="user@example.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="signin-password">Password</label>
+                  <input
+                    id="signin-password"
+                    type="password"
+                    className="form-input"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  onClick={handleEmailLogin}
+                  className={`btn-main${(email.trim() && password.trim() && !loading) ? '' : ' disabled'}`}
+                  disabled={!email.trim() || !password.trim() || loading}
+                  style={{ marginBottom: '20px' }}
+                >
+                  {loading ? 'Signing In...' : 'Sign In'}
+                </button>
+
+                <div style={{textAlign: 'center', marginBottom: '20px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600}}>
+                  OR SIGN IN WITH GOOGLE
+                </div>
+
                 <a href="/authorize?mode=signin" className="btn-main" id="signin-btn">
                   {googleIcon}
                   Sign In with Google
@@ -379,6 +467,43 @@ function SignInContent() {
                     required
                     autoFocus
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="signup-email">Email Address</label>
+                  <input
+                    id="signup-email"
+                    type="email"
+                    className="form-input"
+                    placeholder="user@example.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="signup-password">Password</label>
+                  <input
+                    id="signup-password"
+                    type="password"
+                    className="form-input"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  onClick={handleEmailSignup}
+                  className={`btn-main${(email.trim() && password.trim() && name.trim() && !loading) ? '' : ' disabled'}`}
+                  disabled={!email.trim() || !password.trim() || !name.trim() || loading}
+                  style={{ marginBottom: '20px' }}
+                >
+                  {loading ? 'Signing Up...' : 'Sign Up'}
+                </button>
+
+                <div style={{textAlign: 'center', marginBottom: '20px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600}}>
+                  OR SIGN UP WITH GOOGLE
                 </div>
 
                 <a

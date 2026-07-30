@@ -362,6 +362,12 @@ def index():
     })
 
 
+@app.route("/health")
+def health():
+    """Lightweight health-check endpoint used by the keep-alive pinger."""
+    return jsonify({"status": "ok"}), 200
+
+
 @app.route("/authorize")
 def authorize():
     # mode: "signin" (default) or "signup"
@@ -545,6 +551,105 @@ def oauth2callback():
             return redirect(f"{frontend_url}/sign-in?error=profile_error")
 
 
+
+
+# ── Email/Password Auth Endpoints ──────────────────────────────────────────────
+
+@app.route("/api/auth/signup", methods=["POST"])
+def api_auth_signup():
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify({"error": "Database not configured"}), 500
+    
+    data = request.get_json() or {}
+    email = data.get("email", "").lower().strip()
+    name = data.get("name", "").strip()
+    password = data.get("password", "")
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    # Check if exists
+    try:
+        check = http_requests.get(
+            f"{SUPABASE_URL}/rest/v1/users",
+            params={"email": f"eq.{email}", "select": "id"},
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=8,
+        )
+        if check.status_code == 200 and check.json():
+            return jsonify({"error": "Account already exists with this email"}), 409
+    except Exception as exc:
+        logger.error(f"[Auth] Signup DB check error: {exc}")
+        return jsonify({"error": "Database error checking user"}), 500
+
+    # Insert new user
+    try:
+        payload = {
+            "email": email,
+            "name": name or None,
+            "role": "user",
+            "password": password
+        }
+        resp = http_requests.post(
+            f"{SUPABASE_URL}/rest/v1/users",
+            json=payload,
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+            timeout=8,
+        )
+        if resp.status_code in (200, 201):
+            session["user_email"] = email
+            logger.info("[Auth] New user created via email/password: %s", email)
+            return jsonify({"status": "ok", "email": email})
+        else:
+            logger.error(f"[Auth] Signup insert failed {resp.status_code}: {resp.text}")
+            return jsonify({"error": "Failed to create account"}), 500
+    except Exception as exc:
+        logger.error(f"[Auth] Signup insert exception: {exc}")
+        return jsonify({"error": "Could not connect to database"}), 500
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def api_auth_login():
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify({"error": "Database not configured"}), 500
+    
+    data = request.get_json() or {}
+    email = data.get("email", "").lower().strip()
+    password = data.get("password", "")
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    try:
+        resp = http_requests.get(
+            f"{SUPABASE_URL}/rest/v1/users",
+            params={"email": f"eq.{email}", "select": "password,role"},
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=8,
+        )
+        if resp.status_code == 200:
+            rows = resp.json()
+            if not rows:
+                return jsonify({"error": "No account found for that email"}), 404
+            
+            stored_password = rows[0].get("password")
+            if stored_password != password:
+                return jsonify({"error": "Incorrect password"}), 401
+            
+            session["user_email"] = email
+            role = rows[0].get("role", "user")
+            logger.info("[Auth] Email/Password Sign-in OK — %s role=%s", email, role)
+            return jsonify({"status": "ok", "email": email, "role": role})
+            
+        return jsonify({"error": "Database lookup failed"}), 500
+    except Exception as exc:
+        logger.error(f"[Auth] Login exception: {exc}")
+        return jsonify({"error": "Could not connect to database"}), 500
 
 
 # ── Admin dashboard data endpoints ───────────────────────────────────────────
@@ -1415,10 +1520,53 @@ def api_auto_status():
         })
 
 
+# ── Self-ping keep-alive (prevents Render free-tier from sleeping) ────────────
+# Render's free tier spins down a web service after ~15 minutes of inactivity.
+# This thread pings the server's own /health endpoint every 10 minutes so the
+# process is never considered idle and the background scheduler keeps running.
+#
+# The server URL is read from RENDER_EXTERNAL_URL, which Render injects
+# automatically into every web service — no manual configuration needed.
+# On local dev the env var is absent, so the pinger is silently skipped.
+
+KEEP_ALIVE_INTERVAL_SECONDS = 600   # 10 minutes (Render sleeps after ~15 min)
+
+
+def _keep_alive_loop():
+    """Background thread: ping own /health every 10 minutes to stay awake."""
+    self_url = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
+    if not self_url:
+        logger.info("[KeepAlive] RENDER_EXTERNAL_URL not set — pinger disabled (local dev).")
+        return
+
+    ping_url = f"{self_url}/health"
+    logger.info("[KeepAlive] Self-ping started → %s (every %ds)", ping_url, KEEP_ALIVE_INTERVAL_SECONDS)
+
+    # Wait one full interval before the first ping so we don't hammer the server
+    # on boot while it's still initialising.
+    time.sleep(KEEP_ALIVE_INTERVAL_SECONDS)
+
+    while True:
+        try:
+            resp = http_requests.get(ping_url, timeout=10)
+            logger.info("[KeepAlive] Ping sent → HTTP %s", resp.status_code)
+        except Exception as exc:
+            logger.warning("[KeepAlive] Ping failed: %s", exc)
+        time.sleep(KEEP_ALIVE_INTERVAL_SECONDS)
+
+
+def start_keep_alive():
+    """Spawn the keep-alive pinger thread (runs only on Render)."""
+    t = threading.Thread(target=_keep_alive_loop, daemon=True, name="keep-alive-pinger")
+    t.start()
+    logger.info("[KeepAlive] Pinger thread launched.")
+
+
 # Start the background scheduler automatically when the server boots.
 # Because Render uses Gunicorn, this must be outside the __main__ block.
 # (Make sure to always run Gunicorn with --workers 1)
 start_auto_scheduler()
+start_keep_alive()
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000, use_reloader=False)
