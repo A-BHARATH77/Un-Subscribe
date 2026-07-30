@@ -2,7 +2,7 @@
 export default function About() {
   return (
     <>
-<section className="section_about" suppressHydrationWarning>
+<section className="section_about" id="about" suppressHydrationWarning>
 <div className="padding-section-large" suppressHydrationWarning></div>
 <div className="padding-global" suppressHydrationWarning>
 <div className="container-large" suppressHydrationWarning>

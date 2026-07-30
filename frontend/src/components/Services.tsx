@@ -2,7 +2,7 @@
 export default function Services() {
   return (
     <>
-<section className="section_services" suppressHydrationWarning>
+<section className="section_services" id="features" suppressHydrationWarning>
 <div className="padding-section-large" suppressHydrationWarning></div>
 <div className="padding-global" suppressHydrationWarning>
 <div className="container-large" suppressHydrationWarning>

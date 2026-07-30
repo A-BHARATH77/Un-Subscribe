@@ -2,7 +2,7 @@
 export default function Expertise() {
   return (
     <>
-<section className="section_expertise" suppressHydrationWarning>
+<section className="section_expertise" id="expertise" suppressHydrationWarning>
 <div className="padding-section-large" suppressHydrationWarning></div>
 <div className="padding-global" suppressHydrationWarning>
 <div className="container-large" suppressHydrationWarning>
