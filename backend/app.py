@@ -162,6 +162,28 @@ def save_token(creds_dict):
             logger.warning("[Token] Could not save token to Supabase: %s", exc)
 
 
+def delete_token_from_supabase():
+    """Delete the stale admin token row from Supabase so it is never reloaded."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return
+    try:
+        resp = http_requests.delete(
+            f"{SUPABASE_URL}/rest/v1/admin_tokens",
+            params={"id": "eq.1"},
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            },
+            timeout=8,
+        )
+        if resp.status_code in (200, 204):
+            logger.info("[Token] Stale token deleted from Supabase.")
+        else:
+            logger.warning("[Token] Could not delete token from Supabase: %s %s", resp.status_code, resp.text)
+    except Exception as exc:
+        logger.warning("[Token] Exception deleting token from Supabase: %s", exc)
+
+
 def load_token():
     """
     Read the admin OAuth token. Priority:
@@ -248,10 +270,25 @@ def get_gmail_service():
         scopes=creds_data["scopes"],
     )
     if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-        updated = credentials_to_dict(creds)
-        session["credentials"] = updated
-        save_token(updated)
+        try:
+            creds.refresh(Request())
+            updated = credentials_to_dict(creds)
+            session["credentials"] = updated
+            save_token(updated)
+        except Exception as refresh_exc:
+            err_str = str(refresh_exc)
+            logger.warning("[Auth] Token refresh failed: %s", err_str)
+            # invalid_grant means the token is dead — wipe everything
+            if "invalid_grant" in err_str:
+                session.pop("credentials", None)
+                os.environ.pop("TOKEN_JSON", None)
+                if os.path.exists(TOKEN_FILE):
+                    try:
+                        os.remove(TOKEN_FILE)
+                    except Exception:
+                        pass
+                delete_token_from_supabase()
+            return None
     return build("gmail", "v1", credentials=creds)
 
 
@@ -1334,10 +1371,25 @@ _auto_state = {
 _auto_state_lock = threading.Lock()
 
 
+# Tracks the last token-refresh error so /api/auto-status can surface it.
+_token_error: str = ""
+
+
 def _build_service_from_token():
-    """Build a Gmail service purely from the saved token.json, no Flask session."""
+    """Build a Gmail service purely from the saved token.json, no Flask session.
+
+    Returns None (and logs a clear error) when:
+      - No token exists yet
+      - The token is read-only
+      - The refresh token has expired (e.g. Google 7-day test-app limit)
+      - Any other auth error
+    """
+    global _token_error
+
     token_data = load_token()
     if not token_data:
+        _token_error = "No admin token found — admin must re-authenticate via /authorize."
+        logger.warning("[AutoUnsub] %s", _token_error)
         return None
 
     # Reject read-only tokens
@@ -1345,7 +1397,8 @@ def _build_service_from_token():
     if isinstance(saved_scopes, str):
         saved_scopes = saved_scopes.split()
     if all("readonly" in s for s in saved_scopes if "gmail" in s):
-        logger.warning("[AutoUnsub] Token is read-only — skipping.")
+        _token_error = "Token is read-only — admin must re-authenticate with gmail.modify scope."
+        logger.warning("[AutoUnsub] %s", _token_error)
         return None
 
     creds = Credentials(
@@ -1356,10 +1409,43 @@ def _build_service_from_token():
         client_secret=token_data["client_secret"],
         scopes=token_data["scopes"],
     )
+
     if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-        save_token(credentials_to_dict(creds))
-    return build("gmail", "v1", credentials=creds)
+        try:
+            creds.refresh(Request())
+            save_token(credentials_to_dict(creds))
+            _token_error = ""   # clear any previous error on successful refresh
+            logger.info("[AutoUnsub] Access token refreshed successfully.")
+        except Exception as refresh_exc:
+            # Most common cause: Google OAuth app is in 'Testing' mode — refresh
+            # tokens expire after 7 days.  Publish the app in Google Cloud Console
+            # (OAuth consent screen → Publishing status → Publish App) to get
+            # non-expiring refresh tokens, OR re-authenticate the admin account.
+            _token_error = (
+                f"Token refresh FAILED — the refresh token has likely expired. "
+                f"This happens after ~7 days for Google OAuth apps in 'Testing' mode. "
+                f"Admin must re-authenticate at /authorize. Error: {refresh_exc}"
+            )
+            logger.error("[AutoUnsub] %s", _token_error)
+            # Wipe the stale token from ALL three storage layers so load_token()
+            # never returns it again (env var, disk, and Supabase).
+            os.environ.pop("TOKEN_JSON", None)
+            if os.path.exists(TOKEN_FILE):
+                try:
+                    os.remove(TOKEN_FILE)
+                except Exception:
+                    pass
+            delete_token_from_supabase()   # <-- prevent Supabase from re-loading expired token
+            return None
+
+    try:
+        service = build("gmail", "v1", credentials=creds)
+        _token_error = ""   # credentials are working
+        return service
+    except Exception as build_exc:
+        _token_error = f"Failed to build Gmail service: {build_exc}"
+        logger.error("[AutoUnsub] %s", _token_error)
+        return None
 
 
 def _run_auto_cycle():
@@ -1378,7 +1464,24 @@ def _run_auto_cycle():
         ).execute()
         all_ids = [m["id"] for m in result.get("messages", [])]
     except Exception as exc:
+        err_str = str(exc)
         logger.warning("[AutoUnsub] Failed to fetch unread IDs: %s", exc)
+        # invalid_grant means the access token AND refresh token are both dead.
+        # Wipe from all three storage layers so we stop retrying with a dead token.
+        if "invalid_grant" in err_str:
+            global _token_error
+            _token_error = (
+                "Token is invalid (invalid_grant) — the refresh token has expired or been revoked. "
+                "Admin must re-authenticate at /authorize."
+            )
+            logger.error("[AutoUnsub] %s", _token_error)
+            os.environ.pop("TOKEN_JSON", None)
+            if os.path.exists(TOKEN_FILE):
+                try:
+                    os.remove(TOKEN_FILE)
+                except Exception:
+                    pass
+            delete_token_from_supabase()
         return
 
     # Only process IDs we haven't touched yet
@@ -1511,12 +1614,13 @@ def api_auto_status():
     """Return the current state of the server-side auto-unsubscribe scheduler."""
     with _auto_state_lock:
         return jsonify({
-            "running":      _auto_state["running"],
-            "last_run":     _auto_state["last_run"],
-            "next_run":     _auto_state["next_run"],
-            "cycle_count":  _auto_state["cycle_count"],
-            "processed":    len(_auto_state["processed_ids"]),
-            "last_results": _auto_state["last_results"],
+            "running":       _auto_state["running"],
+            "last_run":      _auto_state["last_run"],
+            "next_run":      _auto_state["next_run"],
+            "cycle_count":   _auto_state["cycle_count"],
+            "processed":     len(_auto_state["processed_ids"]),
+            "last_results":  _auto_state["last_results"],
+            "token_error":   _token_error,   # non-empty string when auth has failed
         })
 
 
