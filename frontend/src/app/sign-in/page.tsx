@@ -40,6 +40,7 @@ function SignInContent() {
   };
 
   // Build the /authorize URL for signup (passes optional name)
+  // Note: used only for the legacy Google-only path; new flow uses handlePresignup.
   const signupHref = `/authorize?mode=signup${name.trim() ? `&name=${encodeURIComponent(name.trim())}` : ''}`;
 
   const handleEmailLogin = async () => {
@@ -65,21 +66,26 @@ function SignInContent() {
     }
   };
 
-  const handleEmailSignup = async () => {
-    if (!email.trim() || !password.trim() || !name.trim()) return;
+  // Step 1 of the new email+password signup flow:
+  // POST name+password to /api/auth/presignup to get a pending_token,
+  // then redirect to /authorize so Google OAuth runs and supplies the email
+  // + refresh token. The backend /oauth2callback picks it all up from there.
+  const handlePresignup = async () => {
+    if (!name.trim() || !password.trim()) return;
     setLoading(true);
     setPageError('');
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch('/api/auth/presignup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), name: name.trim(), password: password.trim() })
+        body: JSON.stringify({ name: name.trim(), password: password.trim() })
       });
       const data = await res.json();
-      if (res.ok && data.status === 'ok') {
-        window.location.href = `/dashboard?_e=${encodeURIComponent(data.email)}`;
+      if (res.ok && data.pending_token) {
+        // Redirect to backend /authorize which redirects to Google OAuth
+        window.location.href = `/authorize?mode=signup&pending=${encodeURIComponent(data.pending_token)}`;
       } else {
-        setPageError(data.error || 'Signup failed');
+        setPageError(data.error || 'Signup failed. Please try again.');
       }
     } catch (err) {
       setPageError('Network error. Please try again.');
@@ -447,7 +453,7 @@ function SignInContent() {
               <>
                 <div className="tab-header">
                   <h1>Get Started</h1>
-                  <p>Welcome to UnSub - Let's create your account</p>
+                  <p>Enter your details, then connect your Google account</p>
                 </div>
 
                 {pageError && (
@@ -470,18 +476,6 @@ function SignInContent() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="signup-email">Email Address</label>
-                  <input
-                    id="signup-email"
-                    type="email"
-                    className="form-input"
-                    placeholder="user@example.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
                   <label className="form-label" htmlFor="signup-password">Password</label>
                   <input
                     id="signup-password"
@@ -490,32 +484,29 @@ function SignInContent() {
                     placeholder="••••••••"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handlePresignup()}
                   />
                 </div>
 
-                <button
-                  onClick={handleEmailSignup}
-                  className={`btn-main${(email.trim() && password.trim() && name.trim() && !loading) ? '' : ' disabled'}`}
-                  disabled={!email.trim() || !password.trim() || !name.trim() || loading}
-                  style={{ marginBottom: '20px' }}
-                >
-                  {loading ? 'Signing Up...' : 'Sign Up'}
-                </button>
-
-                <div style={{textAlign: 'center', marginBottom: '20px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600}}>
-                  OR SIGN UP WITH GOOGLE
+                <div style={{fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.5}}>
+                  Your Google account email will be used automatically in the next step.
                 </div>
 
-                <a
-                  href={name.trim() ? signupHref : undefined}
-                  className={`btn-main${name.trim() ? '' : ' disabled'}`}
+                <button
+                  onClick={handlePresignup}
+                  className={`btn-main${(password.trim() && name.trim() && !loading) ? '' : ' disabled'}`}
+                  disabled={!password.trim() || !name.trim() || loading}
                   id="signup-btn"
-                  aria-disabled={!name.trim()}
-                  tabIndex={name.trim() ? 0 : -1}
                 >
-                  {googleIcon}
-                  Sign Up with Google
-                </a>
+                  {loading ? (
+                    'Redirecting to Google...'
+                  ) : (
+                    <>
+                      {googleIcon}
+                      Continue with Google
+                    </>
+                  )}
+                </button>
 
                 <div className="switch-hint">
                   Already have an account? <button onClick={() => switchTab('signin')}>Log in</button>
