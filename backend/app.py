@@ -1153,80 +1153,107 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
             plain_content = _to_plain(full_unescaped)
 
             # --- Step 2: locate the forwarded-message marker in the plain text ---
-            # Any variant of "---------- Forwarded message ---------" is matched.
+            # Handles two forwarded-email formats:
+            #
+            # Case 1 (Gmail "Forwarded message" style):
+            #   ---------- Forwarded message ---------
+            #   From: Jooble <subscribe@in.jooble.org>
+            #   To: <bharatharavindhan04@gmail.com>
+            #
+            # Case 2/3 (raw paste / other mail-client style — no marker):
+            #   From: Shelby American Collection <info@shelbyamericancollection.org>
+            #   Date: August 2, 2026 at 9:16:20 AM PDT
+            #   To: rovert12992@gmail.com          ← bare address
+            #
+            #   From: The AlphaSense Team <marketing@em.alpha-sense.com>
+            #   To: Trevor Friedman <TFriedman@harveyllc.com>  ← name + address
+
             fwd_marker = re.search(
                 r"-{3,}\s*Forwarded message\s*-{3,}",
                 plain_content,
                 re.IGNORECASE,
             )
 
-            # Only override from_raw / to_raw when we found an actual forwarded
-            # block.  Applying these regex patterns to the entire newsletter body
-            # causes false positives (e.g. "to unsubscribe" matches "To:") that
-            # result in an empty or wrong to_raw → empty sender_email in the DB.
             if fwd_marker:
-                # Take everything after the marker — no arbitrary char limit.
-                # The forwarded headers (From/Date/Subject/To) are always the
-                # first few lines; restricting to 3000 chars caused the To: field
-                # to be cut off on some production emails.
+                # ── Case 1: Gmail "Forwarded message" block ───────────────────
                 fwd_block = plain_content[fwd_marker.end():]
-
-                # Match "From: Priceline <email@deals.priceline.com>" (unchanged)
-                fwd_from_match = re.search(
-                    r"From:\s*(.+?)(?:\r?\n|$)", fwd_block, re.IGNORECASE,
-                )
-                if fwd_from_match:
-                    from_raw = fwd_from_match.group(1).strip()
-
-                # Robust To: extraction — handles all real-world variants:
-                #   To: bharatharavindhan04@gmail.com
-                #   To: <bharatharavindhan04@gmail.com>
-                #   To:\n<bharatharavindhan04@gmail.com>   (value on next line)
-                #   (HTML tags are already stripped by _to_plain above)
-                #
-                # We only scan the first 500 chars of fwd_block (the header
-                # section). NOT using re.DOTALL — that let \s* leap across the
-                # entire body and match an unrelated address in the newsletter.
-                # \s here only matches spaces/tabs, and [\r\n]? allows a single
-                # optional newline between "To:" and the address.
                 header_section = fwd_block[:500]
-                fwd_to_match = re.search(
-                    r"To:[ \t]*[\r\n]?[ \t]*<?([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})>?",
+            else:
+                # ── Case 2/3: No marker — scan the first 800 chars of the body
+                # for bare From:/To: header lines that indicate a pasted/forwarded
+                # header block.  We only do this when the body actually contains
+                # a From: line so we don't accidentally match newsletter copy.
+                header_section = plain_content[:800]
+                if not re.search(r"^From:\s*", header_section, re.IGNORECASE | re.MULTILINE):
+                    header_section = ""   # no From: → not a forwarded block, skip
+
+            if header_section:
+                # Extract From: line — captures full value e.g.
+                #   "Jooble <subscribe@in.jooble.org>"
+                #   "Shelby American Collection <info@shelbyamericancollection.org>"
+                body_from_match = re.search(
+                    r"^From:\s*(.+?)[ \t]*$",
                     header_section,
-                    re.IGNORECASE,
+                    re.IGNORECASE | re.MULTILINE,
                 )
-                if fwd_to_match:
-                    to_raw = fwd_to_match.group(1).strip().strip("<>")
+                if body_from_match:
+                    from_raw = body_from_match.group(1).strip()
+
+                # Extract To: line — handles all real-world variants:
+                #   To: user@gmail.com
+                #   To: <user@gmail.com>
+                #   To: Display Name <user@email.com>
+                #   To:\n<user@gmail.com>   (value on next line)
+                body_to_match = re.search(
+                    r"^To:[ \t]*[\r\n]?[ \t]*(.+?)[ \t]*$",
+                    header_section,
+                    re.IGNORECASE | re.MULTILINE,
+                )
+                if body_to_match:
+                    to_raw = body_to_match.group(1).strip()
 
         except Exception as e:
             logger.warning("[DB] Failed to parse forwarded body: %s", e)
 
         from email.utils import parseaddr
 
-        # organization_name ← display name from the forwarded From: line
-        org_name = from_raw
-        
-        # The string might be mangled (e.g. missing '<' like "Name email@domain.com>")
-        # Find the email address and take everything BEFORE it.
-        email_match = re.search(r"[\w\.\-\+]+@[\w\.\-]+\.[a-zA-Z]{2,}", org_name)
-        if email_match:
-            org_name = org_name[:email_match.start()].strip()
-            # Remove any trailing junk like '<' or '&lt;' that came just before the email
-            org_name = re.sub(r"(<|&lt;|\[|\()*\s*$", "", org_name, flags=re.IGNORECASE).strip()
+        # ── organization_name ← display name from the From: line ─────────────
+        # Handles all variants:
+        #   "Jooble <subscribe@in.jooble.org>"                     → "Jooble"
+        #   "Shelby American Collection <info@shelby...org>"       → "Shelby American Collection"
+        #   "The AlphaSense Team <marketing@em.alpha-sense.com>"   → "The AlphaSense Team"
+        #   "<subscribe@in.jooble.org>"  (no display name)        → email local-part
+        parsed_org_name, parsed_from_email = parseaddr(from_raw)
+        if parsed_org_name:
+            # Standard "Display Name <email>" — use the display name directly
+            org_name = parsed_org_name.strip()
         else:
-            org_name = org_name.split('<')[0].strip()
+            # No display name — fall back to text before the first '<'
+            org_name = from_raw.split('<')[0].strip()
+            # Strip stray junk characters
+            org_name = re.sub(r'[<&\[\(]+\s*$', '', org_name).strip()
+            if not org_name:
+                # Last resort: mangled string with embedded email — take everything before it.
+                # Strip angle brackets from the candidate (e.g. from_raw="<email@x.com>"
+                # gives candidate="<" which must be cleaned before use).
+                email_match = re.search(r"[\w.\-+]+@[\w.\-]+\.[a-zA-Z]{2,}", from_raw)
+                if email_match:
+                    candidate = from_raw[:email_match.start()].strip().strip("<>").strip()
+                    org_name  = candidate if candidate else parsed_from_email
+                else:
+                    org_name = parsed_from_email or from_raw.strip("<>").strip()
 
-        if not org_name:
-            # Fallback if from_raw started with '<' or was just an email
-            org_name, _from_email = parseaddr(from_raw)
-            org_name = org_name or _from_email or from_raw.replace("<", "").replace(">", "").strip()
-
-
-        # sender_email ← the email address from the forwarded To: line
-        #   e.g. "<bkalai2328@gmail.com>" → to_email = "bkalai2328@gmail.com"
+        # ── sender_email ← the email address from the To: line ───────────────
+        # Handles all variants:
+        #   "rovert12992@gmail.com"                  → "rovert12992@gmail.com"
+        #   "<bharatharavindhan04@gmail.com>"         → "bharatharavindhan04@gmail.com"
+        #   "Trevor Friedman <TFriedman@harveyllc.com>" → "TFriedman@harveyllc.com"
         _to_name, to_email = parseaddr(to_raw)
-        # Strip any stray angle brackets in case parseaddr missed them
-        to_email = to_email.strip("<>").strip()
+        to_email = to_email.strip('<>').strip()
+        if not to_email:
+            # parseaddr failed — try a direct regex extraction
+            bare_match = re.search(r"[\w.\-+]+@[\w.\-]+\.[a-zA-Z]{2,}", to_raw)
+            to_email = bare_match.group(0).strip() if bare_match else ""
 
         # Fallback: many bulk newsletters omit the To: header entirely (BCC delivery)
         # or set it to "undisclosed-recipients:;" — in those cases to_email is empty.
@@ -1234,7 +1261,7 @@ def _store_result_in_db(service, msg_id: str, result: dict) -> bool:
         # to the admin, which is the user whose subscription is being cancelled.
         if not to_email and outer_from_raw:
             _, to_email = parseaddr(outer_from_raw)
-            to_email = to_email.strip("<>").strip()
+            to_email = to_email.strip('<>').strip()
             logger.info("[DB] sender_email from outer From: fallback → %s", to_email)
 
         logger.debug("[DB] from_raw=%r  to_raw=%r  outer_from_raw=%r  → to_email=%r",
